@@ -5,8 +5,9 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,10 +28,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class WidgetListActivity extends AppCompatActivity {
     private static final String PREF_KEY_AVAILABLE_WIDGET_LIST = "available_widget_list";
     private final List< WidgetListItem > mAppList = new ArrayList<>();
+    private final AppListAdapter mAppListAdapter = new AppListAdapter();
     private final HashMap< String, Boolean > mAvailableWidgetList = new HashMap<>();
     private PackageManager mPackageManager;
     private SharedPreferences mSharedPreferences;
@@ -43,7 +47,8 @@ public class WidgetListActivity extends AppCompatActivity {
         mPackageManager = getApplicationContext().getPackageManager();
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
 
-        new LoadAppListTask().execute();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit( new LoadAppListRunnable() );
     }
 
     @Override
@@ -139,11 +144,12 @@ public class WidgetListActivity extends AppCompatActivity {
         }
     }
 
-    private class LoadAppListTask extends AsyncTask< Void, Void, Void > {
+    private class LoadAppListRunnable implements Runnable {
         ProgressBar mProgressBar;
 
         @Override
-        protected Void doInBackground( Void... voids ) {
+        public void run() {
+            mProgressBar = findViewById( R.id.progress_bar );
             List< ApplicationInfo > appInfoList = mPackageManager.getInstalledApplications( 0 );
             String availableAppList = ";" + mSharedPreferences.getString( PREF_KEY_AVAILABLE_WIDGET_LIST, "" ) + ";";
 
@@ -179,28 +185,15 @@ public class WidgetListActivity extends AppCompatActivity {
                 }
             } );
 
-            return null;
-        }
+            mProgressBar.setVisibility( android.widget.ProgressBar.INVISIBLE );
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            mProgressBar = findViewById( R.id.progress_bar );
-        }
-
-        @Override
-        protected void onPostExecute( Void aVoid ) {
-            super.onPostExecute( aVoid );
-
-            final AppListAdapter adapter = new AppListAdapter();
             ListView listView = findViewById( R.id.widget_list_view );
-            listView.setAdapter( adapter );
             listView.setOnItemClickListener( new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick( AdapterView< ? > adapterView, View view, int i, long l ) {
                     WidgetListItem widgetListItem = mAppList.get( i );
                     widgetListItem.isAvailable = !widgetListItem.isAvailable;
-                    adapter.notifyDataSetChanged();
+                    mAppListAdapter.notifyDataSetChanged();
 
                     if ( widgetListItem.isAvailable ) {
                         mAvailableWidgetList.put( widgetListItem.pkgName, true );
@@ -211,12 +204,14 @@ public class WidgetListActivity extends AppCompatActivity {
                 }
             } );
 
-            mProgressBar.setVisibility( android.widget.ProgressBar.INVISIBLE );
-        }
-
-        @Override
-        protected void onProgressUpdate( Void... values ) {
-            super.onProgressUpdate( values );
+            Handler handler = new Handler( Looper.getMainLooper() );
+            handler.post( new Runnable() {
+                @Override
+                public void run() {
+                    ListView listView = findViewById( R.id.widget_list_view );
+                    listView.setAdapter( mAppListAdapter );
+                }
+            } );
         }
     }
 }
