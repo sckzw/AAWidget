@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/pref_category_general_setting_title" app:iconSpaceReserved="false">
+        <Preference
+            app:title="@string/pref_widget_list_title"
+            app:summary="@string/pref_widget_list_summary"
+            app:iconSpaceReserved="false">
+            <intent
+                android:targetPackage="com.gitlab.sckzw.aawidget"
+                android:targetClass="com.gitlab.sckzw.aawidget.WidgetListActivity" />
+        </Preference>
+    </PreferenceCategory>
+</androidx.preference.PreferenceScreen>

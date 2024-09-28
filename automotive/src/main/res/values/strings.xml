@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">AAWidget</string>
+    <string name="pref_category_general_setting_title">基本設定</string>
+    <string name="pref_widget_list_title">ウィジェットリスト</string>
+    <string name="pref_widget_list_summary">ウィジェットを選択する</string>
 </resources>
