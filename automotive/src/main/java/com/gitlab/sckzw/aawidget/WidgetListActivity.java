@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -176,7 +177,14 @@ public class WidgetListActivity extends AppCompatActivity {
             textAppName.setText( widgetInfo.appName );
             textPkgName.setText( widgetInfo.pkgName );
             textWidgetLabel.setText( widgetInfo.label );
-            textWidgetDescription.setText( widgetInfo.description );
+
+            if ( ! Objects.equals( widgetInfo.description, "" ) ) {
+                textWidgetDescription.setVisibility( View.VISIBLE );
+                textWidgetDescription.setText( widgetInfo.description );
+            }
+            else {
+                textWidgetDescription.setVisibility( View.GONE );
+            }
 
             FrameLayout layoutWidgetPreview = listItemView.findViewById( R.id.layout_widget_preview );
             layoutWidgetPreview.removeAllViews();
