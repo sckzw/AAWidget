@@ -109,7 +109,6 @@ public class WidgetListActivity extends AppCompatActivity {
             return position;
         }
 
-        @SuppressLint("ResourceType")
         @Override
         public View getView( int position, View convertView, ViewGroup parent ) {
             WidgetInfo widgetInfo = (WidgetInfo)getItem( position );
@@ -129,37 +128,6 @@ public class WidgetListActivity extends AppCompatActivity {
                 } catch ( PackageManager.NameNotFoundException ex ) {
                     widgetInfo.appIcon = ResourcesCompat.getDrawable( getResources(), android.R.drawable.sym_def_app_icon, null );
                 }
-            }
-
-            AppWidgetProviderInfo providerInfo = widgetInfo.providerInfo;
-            Context context = getApplicationContext();
-            View previewView = null;
-            Drawable previewImage = null;
-
-            if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && providerInfo.previewLayout != 0 ) {
-                try {
-                    Context providerContext = context.createPackageContext( widgetInfo.pkgName, 0 );
-                    previewView = LayoutInflater.from( providerContext ).inflate( providerInfo.previewLayout, null );
-                }
-                catch ( PackageManager.NameNotFoundException ignored ) {
-                }
-            }
-
-            if ( previewView == null ) {
-                int densityDpi = context.getResources().getDisplayMetrics().densityDpi;
-                previewImage = providerInfo.loadPreviewImage( context, densityDpi );
-
-                if ( previewImage == null ) {
-                    previewImage = providerInfo.loadIcon( context, densityDpi );
-                }
-
-                if ( previewImage == null ) {
-                    previewImage = widgetInfo.appIcon;
-                }
-
-                ImageView imageView = new ImageView( context );
-                imageView.setImageDrawable( previewImage );
-                previewView = imageView;
             }
 
             View listItemView = convertView;
@@ -188,9 +156,57 @@ public class WidgetListActivity extends AppCompatActivity {
 
             FrameLayout layoutWidgetPreview = listItemView.findViewById( R.id.layout_widget_preview );
             layoutWidgetPreview.removeAllViews();
-            layoutWidgetPreview.addView( previewView );
+
+            View previewView = getPreview( parent.getContext(), widgetInfo );
+            if ( previewView != null ) {
+                layoutWidgetPreview.addView( previewView );
+            }
 
             return listItemView;
+        }
+
+        @SuppressLint( "ResourceType" )
+        private View getPreview( Context context, WidgetInfo widgetInfo ) {
+            AppWidgetProviderInfo providerInfo = widgetInfo.providerInfo;
+            Drawable previewImage;
+
+            previewImage = providerInfo.loadPreviewImage( context, 0 );
+            if ( previewImage != null ) {
+                ImageView imageView = new ImageView( context );
+                imageView.setImageDrawable( previewImage );
+                return imageView;
+            }
+
+            if ( Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ) {
+                View previewView = null;
+
+                try {
+                    Context providerContext = context.createPackageContext( widgetInfo.pkgName, 0 );
+                    previewView = LayoutInflater.from( providerContext ).inflate( providerInfo.previewLayout, null );
+                }
+                catch ( Exception ignored ) {
+                }
+
+                if ( previewView != null ) {
+                    return previewView;
+                }
+            }
+
+            previewImage = providerInfo.loadIcon( context, 0 );
+            if ( previewImage != null ) {
+                ImageView imageView = new ImageView( context );
+                imageView.setImageDrawable( previewImage );
+                return imageView;
+            }
+
+            previewImage = widgetInfo.appIcon;
+            if ( previewImage != null ) {
+                ImageView imageView = new ImageView( context );
+                imageView.setImageDrawable( previewImage );
+                return imageView;
+            }
+
+            return null;
         }
     }
 
