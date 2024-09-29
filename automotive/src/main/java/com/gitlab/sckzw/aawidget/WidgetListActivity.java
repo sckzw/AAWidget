@@ -20,6 +20,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.preference.PreferenceManager;
 
@@ -103,7 +104,7 @@ public class WidgetListActivity extends AppCompatActivity {
             ImageView imageAppIcon;
             TextView textAppName;
             TextView textPkgName;
-            Switch switchIsEnabled;
+            SwitchCompat switchIsEnabled;
 
             if ( listItemView == null ) {
                 listItemView = ( (LayoutInflater)getSystemService( Context.LAYOUT_INFLATER_SERVICE ) ).inflate( R.layout.widget_list_item, null );
