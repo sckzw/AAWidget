@@ -145,11 +145,9 @@ public class WidgetListActivity extends AppCompatActivity {
     }
 
     private class LoadAppListRunnable implements Runnable {
-        ProgressBar mProgressBar;
-
         @Override
         public void run() {
-            mProgressBar = findViewById( R.id.progress_bar );
+            ProgressBar progressBar = findViewById( R.id.progress_bar );
             List< ApplicationInfo > appInfoList = mPackageManager.getInstalledApplications( 0 );
             String availableAppList = ";" + mSharedPreferences.getString( PREF_KEY_AVAILABLE_WIDGET_LIST, "" ) + ";";
 
@@ -170,22 +168,22 @@ public class WidgetListActivity extends AppCompatActivity {
                     mAvailableWidgetList.put( appInfo.packageName, true );
                 }
 
-                mProgressBar.setProgress( 100 * ( ++appCnt ) / appNum );
+                progressBar.setProgress( 100 * ( ++appCnt ) / appNum );
             }
 
-            Collections.sort( mAppList, new Comparator<WidgetListItem>() {
+            mAppList.sort( new Comparator< WidgetListItem >() {
                 @Override
                 public int compare( WidgetListItem widgetListItem1, WidgetListItem widgetListItem2 ) {
                     if ( widgetListItem1.isAvailable == widgetListItem2.isAvailable ) {
                         return widgetListItem1.appName.compareTo( widgetListItem2.appName );
                     }
                     else {
-                        return widgetListItem1.isAvailable ? -1: 1;
+                        return widgetListItem1.isAvailable ? -1 : 1;
                     }
                 }
             } );
 
-            mProgressBar.setVisibility( android.widget.ProgressBar.INVISIBLE );
+            progressBar.setVisibility( android.widget.ProgressBar.INVISIBLE );
 
             ListView listView = findViewById( R.id.widget_list_view );
             listView.setOnItemClickListener( new AdapterView.OnItemClickListener() {
