@@ -174,6 +174,8 @@ public class WidgetListActivity extends AppCompatActivity {
             if ( previewImage != null ) {
                 ImageView imageView = new ImageView( context );
                 imageView.setImageDrawable( previewImage );
+                imageView.setAdjustViewBounds( true );
+                imageView.setScaleType( ImageView.ScaleType.FIT_CENTER );
                 return imageView;
             }
 
