@@ -182,12 +182,13 @@ public class MainActivity extends AppCompatActivity {
 
         AppWidgetHostView hostView = mAppWidgetHost.createView( getApplicationContext(), appWidgetId, appWidgetInfo );
         hostView.setLayoutParams( new ViewGroup.LayoutParams( ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT ) );
-        hostView.setAppWidget( appWidgetId, appWidgetInfo );
+        // hostView.setAppWidget( appWidgetId, appWidgetInfo );
 
+        float density = Resources.getSystem().getDisplayMetrics().density;
         int width = mLayoutWidgetPreview.getWidth();
         int height = mLayoutWidgetPreview.getHeight();
-        width = (int)( width / Resources.getSystem().getDisplayMetrics().density );
-        height = (int)( height / Resources.getSystem().getDisplayMetrics().density );
+        width = (int)( width / density );
+        height = (int)( height / density );
 
         hostView.updateAppWidgetSize( null, width, height, width, height );
 
