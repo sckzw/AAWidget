@@ -4,7 +4,7 @@ import android.annotation.SuppressLint;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
@@ -25,24 +25,19 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.preference.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class WidgetListActivity extends AppCompatActivity {
-    private static final String PREF_KEY_AVAILABLE_WIDGET_LIST = "available_widget_list";
     private final List< WidgetInfo > mWidgetInfoList = new ArrayList<>();
     private final WidgetListAdapter mWidgetListAdapter = new WidgetListAdapter();
-    private final HashMap< String, Boolean > mAvailableWidgetList = new HashMap<>();
     private PackageManager mPackageManager;
     private AppWidgetManager mAppWidgetManager;
-    private SharedPreferences mSharedPreferences;
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
@@ -51,26 +46,9 @@ public class WidgetListActivity extends AppCompatActivity {
 
         mPackageManager = getApplicationContext().getPackageManager();
         mAppWidgetManager = AppWidgetManager.getInstance( getApplicationContext() );
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit( new LoadAppListRunnable() );
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        String availableAppList = String.join( ";", mAvailableWidgetList.keySet() );
-
-        mSharedPreferences.edit().putString( PREF_KEY_AVAILABLE_WIDGET_LIST, availableAppList ).apply();
-
-        /*
-        Intent intent = new Intent( MessagingService.INTENT_ACTION_SET_PREF );
-        intent.putExtra( "key", PREF_KEY_AVAILABLE_WIDGET_LIST );
-        intent.putExtra( "value", availableAppList );
-        LocalBroadcastManager.getInstance( getApplicationContext() ).sendBroadcast( intent );
-         */
     }
 
     private static class WidgetInfo {
@@ -80,16 +58,14 @@ public class WidgetListActivity extends AppCompatActivity {
         String description;
         AppWidgetProviderInfo providerInfo;
         Drawable appIcon;
-        boolean isAvailable;
 
-        WidgetInfo( String pkgName, String appName, String label, String description, AppWidgetProviderInfo providerInfo, Drawable appIcon, boolean isAvailable ) {
+        WidgetInfo( String pkgName, String appName, String label, String description, AppWidgetProviderInfo providerInfo, Drawable appIcon ) {
             this.pkgName = pkgName;
             this.appName = appName;
             this.label = label;
             this.description = description;
             this.providerInfo = providerInfo;
             this.appIcon = appIcon;
-            this.isAvailable = isAvailable;
         }
     }
 
@@ -185,6 +161,12 @@ public class WidgetListActivity extends AppCompatActivity {
                 try {
                     Context providerContext = context.createPackageContext( widgetInfo.pkgName, 0 );
                     previewView = LayoutInflater.from( providerContext ).inflate( providerInfo.previewLayout, null );
+
+                    int densityDpi = context.getResources().getDisplayMetrics().densityDpi;
+                    previewView.setLayoutParams(
+                            new FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                    FrameLayout.LayoutParams.WRAP_CONTENT ) );
                 }
                 catch ( Exception ignored ) {
                 }
@@ -217,7 +199,6 @@ public class WidgetListActivity extends AppCompatActivity {
         public void run() {
             ProgressBar progressBar = findViewById( R.id.progress_bar );
             List< AppWidgetProviderInfo > widgetProviderInfoList = mAppWidgetManager.getInstalledProviders();
-            String availableAppList = ";" + mSharedPreferences.getString( PREF_KEY_AVAILABLE_WIDGET_LIST, "" ) + ";";
 
             int widgetNum = widgetProviderInfoList.size();
             int widgetCnt = 0;
@@ -251,8 +232,7 @@ public class WidgetListActivity extends AppCompatActivity {
                         label,
                         description,
                         widgetProviderInfo,
-                        null, // appInfo.loadIcon( mPackageManager )
-                        true
+                        null // appInfo.loadIcon( mPackageManager )
                 ) );
 
                 progressBar.setProgress( 100 * ( ++widgetCnt ) / widgetNum );
@@ -261,12 +241,7 @@ public class WidgetListActivity extends AppCompatActivity {
             mWidgetInfoList.sort( new Comparator< WidgetInfo >() {
                 @Override
                 public int compare( WidgetInfo widgetInfo1, WidgetInfo widgetInfo2 ) {
-                    if ( widgetInfo1.isAvailable == widgetInfo2.isAvailable ) {
-                        return widgetInfo1.appName.compareTo( widgetInfo2.appName );
-                    }
-                    else {
-                        return widgetInfo1.isAvailable ? -1 : 1;
-                    }
+                    return widgetInfo1.appName.compareTo( widgetInfo2.appName );
                 }
             } );
 
@@ -277,15 +252,13 @@ public class WidgetListActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick( AdapterView< ? > adapterView, View view, int i, long l ) {
                     WidgetInfo widgetInfo = mWidgetInfoList.get( i );
-                    widgetInfo.isAvailable = !widgetInfo.isAvailable;
-                    mWidgetListAdapter.notifyDataSetChanged();
 
-                    if ( widgetInfo.isAvailable ) {
-                        mAvailableWidgetList.put( widgetInfo.pkgName, true );
-                    }
-                    else {
-                        mAvailableWidgetList.remove( widgetInfo.pkgName );
-                    }
+                    Intent intent = new Intent();
+                    intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, widgetInfo.providerInfo.provider );
+                    intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE, widgetInfo.providerInfo.getProfile() );
+
+                    setResult( RESULT_OK, intent );
+                    finish();
                 }
             } );
 

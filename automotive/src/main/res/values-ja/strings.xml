@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AAWidget</string>
+    <string name="add_widget">ウィジェットを追加する</string>
+    <string name="remove_widget">ウィジェットを削除する</string>
+    <string name="pref_background_color_title">背景色コード</string>
+    <string name="pref_background_color_summary">背景色コードを入力する</string>
+    <string name="pref_category_widget_preview_title">ウィジェットプレビュー</string>
+</resources>
