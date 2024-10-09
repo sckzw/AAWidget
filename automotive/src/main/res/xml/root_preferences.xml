@@ -4,7 +4,7 @@
 
     <PreferenceCategory app:title="@string/pref_category_widget_preview_title" app:iconSpaceReserved="false">
         <EditTextPreference
-            app:key="pref_background_color"
+            app:key="background_color"
             app:title="@string/pref_background_color_title"
             app:summary="@string/pref_background_color_summary"
             app:useSimpleSummaryProvider="true"

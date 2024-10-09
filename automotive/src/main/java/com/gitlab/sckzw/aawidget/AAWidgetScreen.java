@@ -8,14 +8,12 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.util.Log;
 import android.view.Surface;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.car.app.AppManager;
@@ -41,7 +39,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback {
     private AppWidgetManager mAppWidgetManager;
     private AppWidgetHostView mHostView;
     private SharedPreferences mSharedPreferences;
-    private int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
+    private int mAppWidgetId;
+    private String mBackgroundColor;
 
     private final CarContext mCarContext;
     private final Context mAppContext;
@@ -56,6 +55,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback {
 
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( mAppContext );
         mAppWidgetId = mSharedPreferences.getInt( "widget_id", AppWidgetManager.INVALID_APPWIDGET_ID );
+        mBackgroundColor = mSharedPreferences.getString( "background_color", "" );
 
         mAppWidgetHost = new AppWidgetHost( mAppContext, 0 );
         mAppWidgetManager = AppWidgetManager.getInstance( mAppContext );
@@ -91,6 +91,12 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback {
             mHostView = mAppWidgetHost.createView( mAppContext, mAppWidgetId, mAppWidgetInfo );
             // mHostView.setLayoutParams( new ViewGroup.LayoutParams( width, height ) );
             // mHostView.setAppWidget( mAppWidgetId, mAppWidgetInfo );
+
+            try {
+                mHostView.setBackgroundColor( Color.parseColor( mBackgroundColor ) );
+            }
+            catch ( Exception ignored ) {
+            }
 
             // mHostView.setDescendantFocusability( ViewGroup.FOCUS_BEFORE_DESCENDANTS );
             // mHostView.setClickable( false );
