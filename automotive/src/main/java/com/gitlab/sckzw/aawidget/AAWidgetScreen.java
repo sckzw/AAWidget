@@ -49,7 +49,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private int mSurfaceWidth;
     private int mSurfaceHeight;
     private Rect mVisibleArea = new Rect();
-    private float mScaleRatio = 1.0f;
+    private int mZoomRatio = 100;
 
     protected AAWidgetScreen( @NonNull CarContext carContext ) {
         super( carContext );
@@ -148,8 +148,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int height = visibleArea.height();
 
         float density = Resources.getSystem().getDisplayMetrics().density;
-        width = (int)( width / density * mScaleRatio );
-        height = (int)( height / density * mScaleRatio );
+        width = (int)( width / density * ( mZoomRatio / 100.0f ) );
+        height = (int)( height / density * ( mZoomRatio / 100.0f ) );
 
         // onSurfaceDestroyed( mSurfaceContainer );
         // onSurfaceAvailable( mSurfaceContainer );
@@ -174,7 +174,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                         .setOnClickListener( new OnClickListener() {
                             @Override
                             public void onClick() {
-                                mScaleRatio = 1.0f;
+                                mZoomRatio = 100;
                                 onVisibleAreaChanged( mVisibleArea );
                             }
                         } )
@@ -191,7 +191,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                         .setOnClickListener( new OnClickListener() {
                             @Override
                             public void onClick() {
-                                mScaleRatio -= 0.1f;
+                                mZoomRatio -= 10;
+                                if ( mZoomRatio < 10 ) {
+                                    mZoomRatio = 10;
+                                }
                                 onVisibleAreaChanged( mVisibleArea );                            }
                         } )
                         .build() )
@@ -204,7 +207,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                         .setOnClickListener( new OnClickListener() {
                             @Override
                             public void onClick() {
-                                mScaleRatio += 0.1f;
+                                mZoomRatio += 10;
+                                if ( mZoomRatio > 200 ) {
+                                    mZoomRatio = 200;
+                                }
                                 onVisibleAreaChanged( mVisibleArea );                            }
                         } )
                         .build() )
