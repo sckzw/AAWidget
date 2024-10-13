@@ -59,8 +59,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         mCarContext = carContext;
         mCarContext.getCarService( AppManager.class ).setSurfaceCallback( this );
 
-        mAppWidgetHost = new AppWidgetHost( mAppContext, 0 );
-        mAppWidgetManager = AppWidgetManager.getInstance( mAppContext );
+        mAppWidgetHost = AAWidgetApplication.getAppWidgetHost(); // new AppWidgetHost( mAppContext, 0 );
+        mAppWidgetManager = AAWidgetApplication.getAppWidgetManager(); // AppWidgetManager.getInstance( mAppContext );
 
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( mAppContext );
 
@@ -217,13 +217,13 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     public void onStart( @NonNull LifecycleOwner owner ) {
         DefaultLifecycleObserver.super.onStart( owner );
         Log.i( TAG, "AAWidgetScreen onStart" );
-        mAppWidgetHost.startListening();
+        // mAppWidgetHost.startListening();
     }
 
     @Override
     public void onStop( @NonNull LifecycleOwner owner ) {
         DefaultLifecycleObserver.super.onStop( owner );
         Log.i( TAG, "AAWidgetScreen onStop" );
-        mAppWidgetHost.stopListening();
+        // mAppWidgetHost.stopListening();
     }
 }

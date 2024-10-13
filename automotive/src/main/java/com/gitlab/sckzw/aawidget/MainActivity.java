@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.UserHandle;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
@@ -37,8 +38,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate( Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
 
-        mAppWidgetManager = AppWidgetManager.getInstance( getApplicationContext() );
-        mAppWidgetHost = new AppWidgetHost( getApplicationContext(), 0 );
+        mAppWidgetManager = AAWidgetApplication.getAppWidgetManager(); // AppWidgetManager.getInstance( getApplicationContext() );
+        mAppWidgetHost = AAWidgetApplication.getAppWidgetHost(); // new AppWidgetHost( getApplicationContext(), 0 );
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
         mTmpWidgetId = mSharedPreferences.getInt( "widget_id", AppWidgetManager.INVALID_APPWIDGET_ID );
 
@@ -75,13 +76,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        mAppWidgetHost.startListening();
+        // mAppWidgetHost.startListening();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mAppWidgetHost.stopListening();
+        // mAppWidgetHost.stopListening();
     }
 
     public static class PreferenceFragment extends PreferenceFragmentCompat {
@@ -191,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
         height = (int)( height / density );
 
         hostView.updateAppWidgetSize( null, width, height, width, height );
+        Log.i( TAG, "updateAppWidgetSize " + width + ", " + height + ", " + density );
 
         mLayoutWidgetPreview.removeAllViews();
         mLayoutWidgetPreview.addView( hostView );
