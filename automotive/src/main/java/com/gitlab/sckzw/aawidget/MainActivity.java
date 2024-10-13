@@ -9,6 +9,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.util.Log;
@@ -184,6 +185,13 @@ public class MainActivity extends AppCompatActivity {
         AppWidgetHostView hostView = mAppWidgetHost.createView( getApplicationContext(), appWidgetId, appWidgetInfo );
         hostView.setLayoutParams( new ViewGroup.LayoutParams( ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT ) );
         // hostView.setAppWidget( appWidgetId, appWidgetInfo );
+
+        String backgroundColor = mSharedPreferences.getString( "background_color", "" );
+        try {
+            hostView.setBackgroundColor( Color.parseColor( backgroundColor ) );
+        }
+        catch ( Exception ignored ) {
+        }
 
         float density = Resources.getSystem().getDisplayMetrics().density;
         int width = mLayoutWidgetPreview.getWidth();
