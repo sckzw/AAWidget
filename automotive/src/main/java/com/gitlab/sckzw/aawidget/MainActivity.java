@@ -220,6 +220,11 @@ public class MainActivity extends AppCompatActivity {
             mAppWidgetHost.deleteAppWidgetId( mAppWidgetId );
             mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
             mSharedPreferences.edit().putInt( "widget_id", mAppWidgetId ).commit();
+
+            int[] appWidgetIds = mAppWidgetHost.getAppWidgetIds();
+            for ( int appWidgetId : appWidgetIds ) {
+                mAppWidgetHost.deleteAppWidgetId( appWidgetId );
+            }
         }
     }
 }
