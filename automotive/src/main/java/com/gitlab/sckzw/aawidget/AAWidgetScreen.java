@@ -154,10 +154,9 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         // onSurfaceDestroyed( mSurfaceContainer );
         // onSurfaceAvailable( mSurfaceContainer );
 
+        mHostView.setPadding( visibleArea.left, visibleArea.top, mSurfaceWidth - visibleArea.right, mSurfaceHeight - visibleArea.bottom );
         mHostView.updateAppWidgetSize( null, width, height, width, height );
         Log.i( TAG, "updateAppWidgetSize " + width + ", " + height + ", " + density );
-
-        mHostView.setPadding( visibleArea.left, visibleArea.top, mSurfaceWidth - visibleArea.right, mSurfaceHeight - visibleArea.bottom );
     }
 
     @NonNull
