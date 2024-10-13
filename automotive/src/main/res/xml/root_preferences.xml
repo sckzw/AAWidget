@@ -7,7 +7,7 @@
             app:key="background_color"
             app:title="@string/pref_background_color_title"
             app:summary="@string/pref_background_color_summary"
-            app:defaultValue="#212121"
+            app:defaultValue="#282A2C"
             app:useSimpleSummaryProvider="true"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
