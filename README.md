@@ -1,15 +1,33 @@
 # AAWidget
 
 Android Autoヘッドユニットにウィジェットを表示します。
+下図はマツダコネクト(初代)で時計のウィジェットを表示しています。
 
-## 必要アプリ・機器
-- Android 9.0 (API Level 28)以上の端末
-- [Android Autoアプリ](https://play.google.com/store/apps/details?id=com.google.android.projection.gearhead)
-- Android Autoヘッドユニット (Android Auto対応ナビなど)
-- [AAWireless](https://www.aawireless.io/)
+![AAWidget Head Unit Preview](./image/aawidget-head-unit-preview.jpg)
+
+## 既存アプリ
+
+同様のアプリ([widgets-for-auto](https://github.com/ns130291/widgets-for-auto)
+)が既に存在しています。機能の比較は下表のとおりです。
+
+|     | AAWidget | widgets-for-auto |
+| --- | ---      | ---              |
+| ウィジェットの分割画面 | 可能(カーナビゲーションアプリと同様) | 不可 |
+| ウィジェットのタップ操作 | 不可 | 可能 |
+| アシスタントからナビゲーション開始 | 不可(別のナビゲーションアプリに切り替え必要) | 可能 |
+| 使用ライブラリ | 公式SDK(設計ポリシーには非準拠) | 非公式SDK |
+
+## 必要アプリ・機器と動作確認
+1. Android 9 (API Level 28)以上の端末
+    1. Android 15の端末で動作確認しています。
+1. [AAWireless](https://www.aawireless.io/)
+    1. Android 14以降のAndroid Autoで非認証アプリを動作させるためにAAWirelessを用いています。
+    1. Android 13以前であればKingInstallerなどを用いればAAWirelessなしでも動作するかもしれませんが未確認です。
+1. [Android Autoアプリ](https://play.google.com/store/apps/details?id=com.google.android.projection.gearhead)
+1. Android Autoヘッドユニット (Android Auto対応ナビなど)
 
 ## インストール
-本アプリはAndroid Autoのポリシーに準拠していないため、Google Playストアから配布できません。したがって、以下の手順に従ってインストールしてください。
+本アプリはAndroid Autoのポリシーに準拠していないため、Google Playストアから配布できません。そのため、以下の手順に従ってインストールしてください。
 1. [リリースページ](https://gitlab.com/sckzw/aawidget/-/releases)からAPKファイルをダウンロードし、端末にアプリをインストールしてください。
 1. Android Autoの設定画面の一番下の「バージョン」をタップして「バージョンと権限情報」を表示します。
 1. 「バージョンと権限情報」を10回タップします。
@@ -31,10 +49,10 @@ Android Autoヘッドユニットにウィジェットを表示します。
 1. AAWirelessのアプリで「開発者向けの設定」を有効にしてください。
 1. Android Autoのホーム画面の「AAWidget」のアイコンをタップしてください。
 1. Android Autoの画面にウィジェットが表示されます。
-1. AAWidgetは常に表示しておく必要はないため画面を閉じてください。
+1. 端末上のAAWidgetアプリは常に表示しておく必要はありません。
 
 ## 注意事項
-1. 国内の法律を遵守してください。
+1. 国内の法律を遵守してアプリを使用してください。
 1. 日本国内においては道路交通法の第七十一条の五の五に規定があるとおり、運転中はウィジェットを注視しないでください。
 
 ## 制約事項
@@ -42,12 +60,10 @@ Android Autoヘッドユニットにウィジェットを表示します。
 1. Android Autoにウィジェットを表示している間はGoogleアシスタントからナビゲーションを開始することができません。Googleマップなどのアプリに切り替えてからナビゲーションを開始してください。
     1. Android AutoでGoogleアシスタントからナビゲーションを開始しようとすると、最後に表示したナビゲーションアプリでナビゲーションを実行しようとします。
     1. 本アプリはカーナビゲーションアプリ扱いであるため、本アプリでナビゲーションを実行しようとしますが、本アプリにはナビゲーション機能を備えていないため何も実行しません。
-1. Android Autoの画面は画素数が少ない場合は、ウィジェットの表示が縮小されて期待した表示にならない場合があります。
-1. 一部のウィジェットは正常に動作しません。
+1. Android Autoの画面の画素数が少ない場合は、ウィジェットの表示が縮小されて期待した表示にならない場合があります。
+1. 一部のウィジェットは正常に動作しません。すべてのウィジェットの動作は確認できません。
 
 ## サンプル画像
 ![AAWidget MainActivity Preview](./image/aawidget-main-activity-preview.png)
 
 ![AAWidget ListActivity Preview](./image/aawidget-list-activity-preview.png)
-
-![AAWidget Head Unit Preview](./image/aawidget-head-unit-preview.jpg)
