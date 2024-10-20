@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_widget_wallpaper"
+        android:icon="@drawable/ic_wallpaper"
+        android:title="@string/add_wallpaper" />
+    <item
+        android:id="@+id/nav_widget_add"
+        android:icon="@drawable/ic_widgets"
+        android:title="@string/add_widget" />
+</menu>
