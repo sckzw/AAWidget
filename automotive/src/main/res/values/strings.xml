@@ -11,4 +11,6 @@
     <string name="remove_wallpaper">Remove wallpaper</string>
     <string name="enter_background_color_code">Please enter background color code in #RRGGBB format</string>
     <string name="failed_to_load_wallpaper_image_file">Failed to load wallpaper image file</string>
+    <string name="service_name_widget_2">Widget 2</string>
+    <string name="service_name_widget_1">Widget 1</string>
 </resources>

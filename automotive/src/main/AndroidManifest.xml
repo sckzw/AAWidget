@@ -39,8 +39,8 @@
         <service
             android:name=".AAWidgetCarAppService"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name">
+            android:icon="@drawable/ic_widgets"
+            android:label="@string/service_name_widget_1">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.NAVIGATION" />
@@ -50,8 +50,8 @@
         <service
             android:name=".AAWidgetCarAppService2"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="@string/app_name">
+            android:icon="@drawable/ic_wallpaper"
+            android:label="@string/service_name_widget_2">
             <intent-filter>
                 <action android:name="androidx.car.app.CarAppService" />
                 <category android:name="androidx.car.app.category.POI" />
