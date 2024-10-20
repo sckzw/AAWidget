@@ -2,7 +2,7 @@
 <androidx.preference.PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/pref_category_widget_preview_title" app:iconSpaceReserved="false">
+    <PreferenceCategory app:title="@string/pref_category_setting_title" app:iconSpaceReserved="false">
         <EditTextPreference
             app:key="background_color"
             app:title="@string/pref_background_color_title"

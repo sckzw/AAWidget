@@ -6,4 +6,5 @@
     <string name="pref_background_color_summary">Input background color code</string>
     <string name="pref_category_widget_preview_title">Widget Preview</string>
     <string name="switch_to_google_maps_to_navigate">Please switch to a navigation car app such as Google Maps to navigate</string>
+    <string name="pref_category_setting_title">Settings</string>
 </resources>
