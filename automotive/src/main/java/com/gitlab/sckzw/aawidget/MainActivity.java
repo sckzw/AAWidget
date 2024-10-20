@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mImageWallpaper = findViewById( R.id.image_wallpaper );
         mNavWidgetMenu = findViewById( R.id.nav_widget_menu );
 
-        if ( !Objects.equals( mWallpaperUri, "" ) ) {
+        if ( !mWallpaperUri.isEmpty() ) {
             addWallpaper( mWallpaperUri );
         }
 
@@ -285,10 +285,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void addWallpaper( String uriString ) {
-        Uri uri = Uri.parse( uriString );
         Bitmap bitmap = null;
 
         try {
+            Uri uri = Uri.parse( uriString );
             bitmap = MediaStore.Images.Media.getBitmap( getContentResolver(), uri );
         }
         catch ( Exception ex ) {

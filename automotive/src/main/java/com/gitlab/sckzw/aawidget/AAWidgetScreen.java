@@ -8,12 +8,16 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
-import android.util.Log;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.view.Surface;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.car.app.AppManager;
@@ -41,19 +45,17 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private final SharedPreferences mSharedPreferences;
 
     private Surface mSurface;
-    private SurfaceContainer mSurfaceContainer;
     private VirtualDisplay mVirtualDisplay;
     private Presentation mPresentation;
-    private AppWidgetHostView mHostView;
+    private AppWidgetHostView mAppWidgetView;
 
+    private Rect mVisibleArea = new Rect();
     private int mSurfaceWidth;
     private int mSurfaceHeight;
-    private Rect mVisibleArea = new Rect();
     private int mZoomRatio = 100;
 
     protected AAWidgetScreen( @NonNull CarContext carContext ) {
         super( carContext );
-        Log.i( TAG, "AAWidgetScreen constructor" );
 
         mAppContext = carContext.getApplicationContext();
         mCarContext = carContext;
@@ -69,8 +71,6 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
     @Override
     public void onSurfaceAvailable( @NonNull SurfaceContainer surfaceContainer ) {
-        Log.i( TAG, "AAWidgetScreen onSurfaceAvailable" );
-        mSurfaceContainer = surfaceContainer;
         mSurface = surfaceContainer.getSurface();
         if ( mSurface == null ) {
             return;
@@ -83,9 +83,6 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        int appWidgetId = mSharedPreferences.getInt( "widget_id", AppWidgetManager.INVALID_APPWIDGET_ID );
-        String backgroundColor = mSharedPreferences.getString( "background_color", "" );
-
         mVirtualDisplay = mCarContext.getSystemService( DisplayManager.class )
                 .createVirtualDisplay(
                         mCarContext.getString( R.string.app_name ),
@@ -97,49 +94,56 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
         mPresentation = new Presentation( mCarContext, mVirtualDisplay.getDisplay() );
 
-        if ( appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
-            AppWidgetProviderInfo appWidgetInfo = mAppWidgetManager.getAppWidgetInfo( appWidgetId );
-            mHostView = mAppWidgetHost.createView( mAppContext, appWidgetId, appWidgetInfo );
+        String backgroundColor = mSharedPreferences.getString( "background_color", "" );
+        String wallpaperUri = mSharedPreferences.getString( "wallpaper_uri", "" );
+        int appWidgetId = mSharedPreferences.getInt( "widget_id", AppWidgetManager.INVALID_APPWIDGET_ID );
+
+        FrameLayout layoutWidget = new FrameLayout( mCarContext );
+
+        try {
+            layoutWidget.setBackgroundColor( Color.parseColor( backgroundColor ) );
+        }
+        catch ( Exception ignored ) {
+        }
+
+        if ( !wallpaperUri.isEmpty() ) {
+            Bitmap bitmap = null;
 
             try {
-                mHostView.setBackgroundColor( Color.parseColor( backgroundColor ) );
+                Uri uri = Uri.parse( wallpaperUri );
+                bitmap = MediaStore.Images.Media.getBitmap( mCarContext.getContentResolver(), uri );
             }
             catch ( Exception ignored ) {
             }
 
-            /*
-            float density = Resources.getSystem().getDisplayMetrics().density;
-            int width = (int)( mSurfaceWidth / density * mScaleRatio );
-            int height = (int)( mSurfaceHeight / density * mScaleRatio );
+            ImageView imageWallpaper = new ImageView( mCarContext );
+            imageWallpaper.setImageBitmap( bitmap );
+            imageWallpaper.setScaleType( ImageView.ScaleType.CENTER_CROP );
 
-            mHostView.updateAppWidgetSize( null, width, height, width, height );
-            Log.i( TAG, "updateAppWidgetSize " + width + ", " + height + ", " + density );
-            */
-
-            mPresentation.setContentView( mHostView );
+            layoutWidget.addView( imageWallpaper );
         }
 
+        if ( appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
+            AppWidgetProviderInfo appWidgetInfo = mAppWidgetManager.getAppWidgetInfo( appWidgetId );
+            mAppWidgetView = mAppWidgetHost.createView( mAppContext, appWidgetId, appWidgetInfo );
+
+            layoutWidget.addView( mAppWidgetView );
+        }
+
+        mPresentation.setContentView( layoutWidget );
         mPresentation.show();
     }
 
     @Override
     public void onSurfaceDestroyed( @NonNull SurfaceContainer surfaceContainer ) {
-        Log.i( TAG, "AAWidgetScreen onSurfaceDestroyed" );
         mSurface = null;
         mPresentation.dismiss();
         mVirtualDisplay.release();
     }
 
     @Override
-    public void onStableAreaChanged( @NonNull Rect stableArea ) {
-        Log.i( TAG, "AAWidgetScreen onStableAreaChanged: " + stableArea.left + ", " + stableArea.top + ", " + stableArea.right + ", " + stableArea.bottom );
-    }
-
-    @Override
     public void onVisibleAreaChanged( @NonNull Rect visibleArea ) {
-        Log.i( TAG, "AAWidgetScreen onVisibleAreaChanged: " + visibleArea.left + ", " + visibleArea.top + ", " + visibleArea.right + ", " + visibleArea.bottom );
-
-        if ( mHostView == null ) {
+        if ( mAppWidgetView == null ) {
             return;
         }
 
@@ -151,12 +155,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         width = (int)( width / density * ( mZoomRatio / 100.0f ) );
         height = (int)( height / density * ( mZoomRatio / 100.0f ) );
 
-        // onSurfaceDestroyed( mSurfaceContainer );
-        // onSurfaceAvailable( mSurfaceContainer );
-
-        mHostView.setPadding( visibleArea.left, visibleArea.top, mSurfaceWidth - visibleArea.right, mSurfaceHeight - visibleArea.bottom );
-        mHostView.updateAppWidgetSize( null, width, height, width, height );
-        Log.i( TAG, "updateAppWidgetSize " + width + ", " + height + ", " + density );
+        mAppWidgetView.setPadding( visibleArea.left, visibleArea.top, mSurfaceWidth - visibleArea.right, mSurfaceHeight - visibleArea.bottom );
+        mAppWidgetView.updateAppWidgetSize( null, width, height, width, height );
     }
 
     @NonNull
@@ -222,14 +222,12 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @Override
     public void onStart( @NonNull LifecycleOwner owner ) {
         DefaultLifecycleObserver.super.onStart( owner );
-        Log.i( TAG, "AAWidgetScreen onStart" );
         // mAppWidgetHost.startListening();
     }
 
     @Override
     public void onStop( @NonNull LifecycleOwner owner ) {
         DefaultLifecycleObserver.super.onStop( owner );
-        Log.i( TAG, "AAWidgetScreen onStop" );
         // mAppWidgetHost.stopListening();
     }
 }
