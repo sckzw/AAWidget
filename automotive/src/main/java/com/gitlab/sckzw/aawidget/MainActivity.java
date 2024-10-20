@@ -9,23 +9,42 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.UserHandle;
+import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.navigation.NavigationBarView;
 
-public class MainActivity extends AppCompatActivity {
+import java.io.IOException;
+import java.util.Objects;
+
+public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
     static final String TAG = MainActivity.class.getSimpleName();
     AppWidgetManager mAppWidgetManager;
     AppWidgetHost mAppWidgetHost;
@@ -33,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     int mTmpWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     FrameLayout mLayoutWidgetPreview;
-    ExtendedFloatingActionButton mFabWidget;
+    BottomNavigationView mNavWidgetMenu;
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
@@ -63,13 +82,29 @@ public class MainActivity extends AppCompatActivity {
             }
         } );
 
-        mFabWidget = findViewById( R.id.fab_widget );
-        mFabWidget.setOnClickListener( v -> {
-            if ( mAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
-                deleteWidget();
-            }
-            else {
-                mWidgetListActivityLauncher.launch( new Intent( MainActivity.this, WidgetListActivity.class ) );
+        mNavWidgetMenu = findViewById( R.id.nav_widget_menu );
+        mNavWidgetMenu.setOnItemSelectedListener( new NavigationBarView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected( @NonNull MenuItem item ) {
+                if ( item.getItemId() == R.id.nav_widget_add ) {
+                    if ( mAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
+                        deleteWidget();
+                    }
+                    else {
+                        mWidgetListActivityLauncher.launch( new Intent( MainActivity.this, WidgetListActivity.class ) );
+                    }
+
+                    return true;
+                }
+                if ( item.getItemId() == R.id.nav_widget_wallpaper ) {
+                    mWallpaperPickerLauncher.launch( new PickVisualMediaRequest.Builder()
+                            .setMediaType( ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE )
+                            .build() );
+
+                    return true;
+                }
+
+                return false;
             }
         } );
     }
@@ -77,12 +112,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        mSharedPreferences.registerOnSharedPreferenceChangeListener( this );
         // mAppWidgetHost.startListening();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        mSharedPreferences.unregisterOnSharedPreferenceChangeListener( this );
         // mAppWidgetHost.stopListening();
     }
 
@@ -90,6 +127,18 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCreatePreferences( Bundle savedInstanceState, String rootKey ) {
             setPreferencesFromResource( R.xml.root_preferences, rootKey );
+        }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged( SharedPreferences pref, @Nullable String key ) {
+        if ( Objects.equals( key, "background_color" ) ) {
+            try {
+                String backgroundColor = pref.getString( key, "" );
+                mLayoutWidgetPreview.setBackgroundColor( Color.parseColor( backgroundColor ) );
+            } catch ( Exception ignored ) {
+                // TODO: Error Message
+            }
         }
     }
 
@@ -104,6 +153,23 @@ public class MainActivity extends AppCompatActivity {
                     UserHandle profile = data.getParcelableExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE );
 
                     bindWidget( provider, profile );
+                }
+            } );
+
+    ActivityResultLauncher< PickVisualMediaRequest > mWallpaperPickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.PickVisualMedia(),
+            uri -> {
+                if ( uri != null ) {
+                    try {
+                        Bitmap bitmap = MediaStore.Images.Media.getBitmap( getContentResolver(), uri );
+                        Drawable drawable = new BitmapDrawable( bitmap );
+                        mLayoutWidgetPreview.setBackground( drawable );
+                    } catch ( IOException e ) {
+                        throw new RuntimeException( e );
+                    }
+                    Log.i( TAG, "URI: " + uri );
+                }
+                else {
                 }
             } );
 
@@ -188,9 +254,9 @@ public class MainActivity extends AppCompatActivity {
 
         String backgroundColor = mSharedPreferences.getString( "background_color", "" );
         try {
-            hostView.setBackgroundColor( Color.parseColor( backgroundColor ) );
-        }
-        catch ( Exception ignored ) {
+            hostView.setBackgroundColor( Color.alpha( 0 ) );
+            // hostView.setBackgroundColor( Color.parseColor( backgroundColor ) );
+        } catch ( Exception ignored ) {
         }
 
         float density = Resources.getSystem().getDisplayMetrics().density;
@@ -205,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
         mLayoutWidgetPreview.removeAllViews();
         mLayoutWidgetPreview.addView( hostView );
 
-        mFabWidget.setText( R.string.remove_widget );
+        mNavWidgetMenu.getMenu().findItem( R.id.nav_widget_add ).setTitle( R.string.remove_widget );
 
         mAppWidgetId = appWidgetId;
         mTmpWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
@@ -214,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void deleteWidget() {
         mLayoutWidgetPreview.removeAllViews();
-        mFabWidget.setText( R.string.add_widget );
+        mNavWidgetMenu.getMenu().findItem( R.id.nav_widget_add ).setTitle( R.string.add_widget );
 
         if ( mAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
             mAppWidgetHost.deleteAppWidgetId( mAppWidgetId );
@@ -222,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
             mSharedPreferences.edit().putInt( "widget_id", mAppWidgetId ).commit();
 
             int[] appWidgetIds = mAppWidgetHost.getAppWidgetIds();
-            for ( int appWidgetId : appWidgetIds ) {
+            for ( int appWidgetId: appWidgetIds ) {
                 mAppWidgetHost.deleteAppWidgetId( appWidgetId );
             }
         }
