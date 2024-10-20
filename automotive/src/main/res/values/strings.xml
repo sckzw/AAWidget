@@ -2,11 +2,13 @@
     <string name="app_name">AAWidget</string>
     <string name="add_widget">Add widget</string>
     <string name="remove_widget">Remove widget</string>
-    <string name="pref_background_color_title">Background Color Code</string>
-    <string name="pref_background_color_summary">Input background color code</string>
-    <string name="pref_category_widget_preview_title">Widget Preview</string>
+    <string name="pref_background_color_title">Background color code</string>
+    <string name="pref_background_color_summary">Enter background color code</string>
+    <string name="pref_category_widget_preview_title">Widget preview</string>
     <string name="switch_to_google_maps_to_navigate">Please switch to a navigation car app such as Google Maps to navigate</string>
     <string name="pref_category_setting_title">Settings</string>
     <string name="add_wallpaper">Add wallpaper</string>
     <string name="remove_wallpaper">Remove wallpaper</string>
+    <string name="enter_background_color_code">Please enter background color code in #RRGGBB format</string>
+    <string name="failed_to_load_wallpaper_image_file">Failed to load wallpaper image file</string>
 </resources>

@@ -20,6 +20,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
@@ -40,23 +41,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     AppWidgetManager mAppWidgetManager;
     AppWidgetHost mAppWidgetHost;
     AppWidgetHostView mAppWidgetView;
-    SharedPreferences mSharedPreferences;
-    int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
-    int mTmpWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     FrameLayout mLayoutWidgetPreview;
     ImageView mImageWallpaper;
     BottomNavigationView mNavWidgetMenu;
+    SharedPreferences mSharedPreferences;
+    int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
+    int mTmpWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     String mWallpaperUri;
+    String mBackgroundColor;
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
         super.onCreate( savedInstanceState );
-
-        mAppWidgetManager = AAWidgetApplication.getAppWidgetManager(); // AppWidgetManager.getInstance( getApplicationContext() );
-        mAppWidgetHost = AAWidgetApplication.getAppWidgetHost(); // new AppWidgetHost( getApplicationContext(), 0 );
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
-        mTmpWidgetId = mSharedPreferences.getInt( "widget_id", AppWidgetManager.INVALID_APPWIDGET_ID );
-        mWallpaperUri = mSharedPreferences.getString( "wallpaper_uri", "" );
 
         setContentView( R.layout.activity_main );
 
@@ -68,6 +64,18 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mLayoutWidgetPreview = findViewById( R.id.layout_widget_preview );
         mImageWallpaper = findViewById( R.id.image_wallpaper );
         mNavWidgetMenu = findViewById( R.id.nav_widget_menu );
+
+        mAppWidgetManager = AAWidgetApplication.getAppWidgetManager(); // AppWidgetManager.getInstance( getApplicationContext() );
+        mAppWidgetHost = AAWidgetApplication.getAppWidgetHost(); // new AppWidgetHost( getApplicationContext(), 0 );
+
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( getApplicationContext() );
+        mBackgroundColor = mSharedPreferences.getString( "background_color", "" );
+        mWallpaperUri = mSharedPreferences.getString( "wallpaper_uri", "" );
+        mTmpWidgetId = mSharedPreferences.getInt( "widget_id", AppWidgetManager.INVALID_APPWIDGET_ID );
+
+        if ( !mBackgroundColor.isEmpty() ) {
+            setBackgroundColor( mBackgroundColor );
+        }
 
         if ( !mWallpaperUri.isEmpty() ) {
             addWallpaper( mWallpaperUri );
@@ -98,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                     return true;
                 }
                 if ( item.getItemId() == R.id.nav_widget_wallpaper ) {
-                    if ( !Objects.equals( mWallpaperUri, "" ) ) {
+                    if ( !mWallpaperUri.isEmpty() ) {
                         deleteWallpaper();
                     }
                     else {
@@ -139,12 +147,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     @Override
     public void onSharedPreferenceChanged( SharedPreferences pref, @Nullable String key ) {
         if ( Objects.equals( key, "background_color" ) ) {
-            try {
-                String backgroundColor = pref.getString( key, "" );
-                mLayoutWidgetPreview.setBackgroundColor( Color.parseColor( backgroundColor ) );
-            } catch ( Exception ignored ) {
-                // TODO: Error Message
-            }
+            String backgroundColor = pref.getString( key, "" );
+            setBackgroundColor( backgroundColor );
         }
     }
 
@@ -292,7 +296,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             bitmap = MediaStore.Images.Media.getBitmap( getContentResolver(), uri );
         }
         catch ( Exception ex ) {
-            // TODO: Error Handling
+            Toast.makeText( this, R.string.failed_to_load_wallpaper_image_file, Toast.LENGTH_LONG ).show();
             return;
         }
 
@@ -309,5 +313,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
         mWallpaperUri = "";
         mSharedPreferences.edit().putString( "wallpaper_uri", mWallpaperUri ).commit();
+    }
+
+    private void setBackgroundColor( String colorString ) {
+        try {
+            mLayoutWidgetPreview.setBackgroundColor( Color.parseColor( colorString ) );
+        } catch ( Exception ex ) {
+            Toast.makeText( this, R.string.enter_background_color_code, Toast.LENGTH_LONG ).show();
+        }
     }
 }
