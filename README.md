@@ -18,7 +18,7 @@ Android Autoヘッドユニットにウィジェットを表示します。
 | アシスタントからナビゲーション開始 | 可能<br>ウィジェットをカーナビゲーションアプリの領域に表示した場合は制約あり(制約事項を参照) | 可能 |
 | 背景色の設定 | 可能 | 不可 |
 | 壁紙の設定 | 可能 | 不可 |
-| 使用ライブラリ | 公式SDK(設計ポリシーには非準拠) | 非公式SDK |
+| Android Auto SDK | 公式SDK(設計ポリシーには非準拠) | 非公式SDK |
 
 ## 必要アプリ・機器と動作確認
 1. Android 9 (API Level 28)以上の端末
@@ -75,3 +75,13 @@ Android Autoヘッドユニットにウィジェットを表示します。
 ![AAWidget MainActivity Preview](./image/aawidget-main-activity-preview.png)
 
 ![AAWidget ListActivity Preview](./image/aawidget-list-activity-preview.png)
+
+![AAWidget Head Unit Home Preview1](./image/aawidget-head-unit-home-preview.png)
+
+![AAWidget Head Unit Preview1](./image/aawidget-head-unit-preview1.png)
+
+![AAWidget Head Unit Preview2](./image/aawidget-head-unit-preview2.png)
+
+![AAWidget Head Unit Wide Preview1](./image/aawidget-head-unit-wide-preview1.png)
+
+![AAWidget Head Unit Wide Preview2](./image/aawidget-head-unit-wide-preview2.png)
