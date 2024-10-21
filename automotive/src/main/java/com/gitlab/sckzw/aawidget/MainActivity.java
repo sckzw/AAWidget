@@ -297,7 +297,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
         catch ( Exception ex ) {
             Toast.makeText( this, R.string.failed_to_load_wallpaper_image_file, Toast.LENGTH_LONG ).show();
-            return;
         }
 
         mImageWallpaper.setImageBitmap( bitmap );
