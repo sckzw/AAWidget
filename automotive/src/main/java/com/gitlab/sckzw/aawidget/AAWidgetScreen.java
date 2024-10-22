@@ -18,10 +18,12 @@ import android.provider.MediaStore;
 import android.view.Surface;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.car.app.AppManager;
 import androidx.car.app.CarContext;
+import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
 import androidx.car.app.SurfaceCallback;
 import androidx.car.app.SurfaceContainer;
@@ -113,7 +115,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                 Uri uri = Uri.parse( wallpaperUri );
                 bitmap = MediaStore.Images.Media.getBitmap( mCarContext.getContentResolver(), uri );
             }
-            catch ( Exception ignored ) {
+            catch ( Exception ex ) {
+                CarToast.makeText( mCarContext, R.string.failed_to_load_wallpaper_image_file, CarToast.LENGTH_LONG ).show();
             }
 
             ImageView imageWallpaper = new ImageView( mCarContext );
