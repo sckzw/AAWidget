@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.car.app.CarAppService;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -13,10 +14,17 @@ import androidx.car.app.Session;
 import java.util.Objects;
 
 public class AAWidgetSession extends Session {
+    private final Class< ? extends CarAppService > mCarAppServiceClass;
+
+    public AAWidgetSession( Class< ? extends CarAppService > carAppServiceClass ) {
+        super();
+        mCarAppServiceClass = carAppServiceClass;
+    }
+
     @NonNull
     @Override
     public Screen onCreateScreen( @NonNull Intent intent ) {
-        return new AAWidgetScreen( getCarContext() );
+        return new AAWidgetScreen( getCarContext(), mCarAppServiceClass );
     }
 
     @Override

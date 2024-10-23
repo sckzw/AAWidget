@@ -18,10 +18,10 @@ import android.provider.MediaStore;
 import android.view.Surface;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.car.app.AppManager;
+import androidx.car.app.CarAppService;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -40,6 +40,7 @@ import androidx.preference.PreferenceManager;
 
 public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLifecycleObserver {
     private final static String TAG = AAWidgetScreen.class.getSimpleName();
+    private final Class< ? extends CarAppService > mCarAppServiceClass;
     private final Context mAppContext;
     private final CarContext mCarContext;
     private final AppWidgetHost mAppWidgetHost;
@@ -56,8 +57,9 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private int mSurfaceHeight;
     private int mZoomRatio = 100;
 
-    protected AAWidgetScreen( @NonNull CarContext carContext ) {
+    protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
+        mCarAppServiceClass = carAppServiceClass;
 
         mAppContext = carContext.getApplicationContext();
         mCarContext = carContext;
@@ -165,6 +167,15 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @NonNull
     @Override
     public Template onGetTemplate() {
+        int iconId;
+
+        if ( mCarAppServiceClass.isAssignableFrom( AAWidgetCarAppService.class ) ) {
+            iconId = R.drawable.ic_widgets;
+        }
+        else {
+            iconId = R.drawable.ic_wallpaper;
+        }
+
         NavigationTemplate.Builder builder = new NavigationTemplate.Builder();
 
         builder.setActionStrip( new ActionStrip.Builder()
@@ -172,7 +183,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                         .setIcon( new CarIcon.Builder(
                                 IconCompat.createWithResource(
                                         getCarContext(),
-                                        R.drawable.ic_refresh ) )
+                                        iconId ) )
                                 .build() )
                         .setOnClickListener( new OnClickListener() {
                             @Override
@@ -198,7 +209,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                                 if ( mZoomRatio < 10 ) {
                                     mZoomRatio = 10;
                                 }
-                                onVisibleAreaChanged( mVisibleArea );                            }
+                                onVisibleAreaChanged( mVisibleArea );
+                            }
                         } )
                         .build() )
                 .addAction( new Action.Builder()
@@ -214,7 +226,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                                 if ( mZoomRatio > 200 ) {
                                     mZoomRatio = 200;
                                 }
-                                onVisibleAreaChanged( mVisibleArea );                            }
+                                onVisibleAreaChanged( mVisibleArea );
+                            }
                         } )
                         .build() )
                 .build() );

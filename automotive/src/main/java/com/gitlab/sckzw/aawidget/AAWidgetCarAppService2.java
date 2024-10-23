@@ -13,7 +13,7 @@ public class AAWidgetCarAppService2 extends CarAppService {
     @NonNull
     @Override
     public Session onCreateSession( @NonNull SessionInfo sessionInfo ) {
-        return new AAWidgetSession();
+        return new AAWidgetSession( AAWidgetCarAppService2.class );
     }
 
     @SuppressLint("PrivateResource")
