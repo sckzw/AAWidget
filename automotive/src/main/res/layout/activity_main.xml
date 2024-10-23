@@ -20,7 +20,7 @@
         android:id="@+id/layout_widget_preview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" >
+        android:layout_weight="1">
 
         <ImageView
             android:id="@+id/image_wallpaper"
@@ -32,7 +32,8 @@
     <FrameLayout
         android:id="@+id/layout_preference"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_widget_menu"
