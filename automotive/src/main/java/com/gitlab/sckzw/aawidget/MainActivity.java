@@ -78,7 +78,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         if ( !mWallpaperUri.isEmpty() ) {
-            addWallpaper( mWallpaperUri );
+            try {
+                getContentResolver().takePersistableUriPermission( Uri.parse( mWallpaperUri ), Intent.FLAG_GRANT_READ_URI_PERMISSION );
+                addWallpaper( mWallpaperUri );
+            }
+            catch ( Exception ignored ) {
+            }
         }
 
         mLayoutWidgetPreview.getViewTreeObserver().addOnGlobalLayoutListener( new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -170,8 +175,12 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             new ActivityResultContracts.PickVisualMedia(),
             uri -> {
                 if ( uri != null ) {
-                    getContentResolver().takePersistableUriPermission( uri, Intent.FLAG_GRANT_READ_URI_PERMISSION );
-                    addWallpaper( uri.toString() );
+                    try {
+                        getContentResolver().takePersistableUriPermission( uri, Intent.FLAG_GRANT_READ_URI_PERMISSION );
+                        addWallpaper( uri.toString() );
+                    }
+                    catch ( Exception ignored ) {
+                    }
                 }
             } );
 
