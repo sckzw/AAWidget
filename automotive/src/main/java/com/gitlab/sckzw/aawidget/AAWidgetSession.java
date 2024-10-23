@@ -1,8 +1,10 @@
 package com.gitlab.sckzw.aawidget;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
@@ -15,6 +17,16 @@ public class AAWidgetSession extends Session {
     @Override
     public Screen onCreateScreen( @NonNull Intent intent ) {
         return new AAWidgetScreen( getCarContext() );
+    }
+
+    @Override
+    public void onCarConfigurationChanged( @NonNull Configuration newConfiguration ) {
+        if ( getCarContext().isDarkMode() ) {
+            AppCompatDelegate.setDefaultNightMode( AppCompatDelegate.MODE_NIGHT_YES );
+        }
+        else {
+            AppCompatDelegate.setDefaultNightMode( AppCompatDelegate.MODE_NIGHT_NO );
+        }
     }
 
     @Override
