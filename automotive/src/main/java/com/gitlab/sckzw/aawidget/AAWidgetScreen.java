@@ -14,7 +14,10 @@ import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -164,6 +167,17 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         mAppWidgetView.updateAppWidgetSize( null, width, height, width, height );
     }
 
+    @Override
+    public void onClick( float x, float y ) {
+        int[] coordinates = new int[2];
+        mAppWidgetView.getLocationOnScreen( coordinates );
+        int xx = coordinates[0] + (int)x;
+        int yy = coordinates[1] + (int)y;
+        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, xx, yy, 0 ) );
+        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, xx, yy, 0 ) );
+        Log.i( TAG, "onClick x:" + x + ", y:" + y );
+    }
+
     @NonNull
     @Override
     public Template onGetTemplate() {
@@ -229,6 +243,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                                 onVisibleAreaChanged( mVisibleArea );
                             }
                         } )
+                        .build() )
+                .addAction( new Action.Builder( Action.PAN )
                         .build() )
                 .build() );
 
