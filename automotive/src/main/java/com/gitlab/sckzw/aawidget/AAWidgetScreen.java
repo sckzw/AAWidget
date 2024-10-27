@@ -1,7 +1,5 @@
 package com.gitlab.sckzw.aawidget;
 
-import static android.view.InputDevice.SOURCE_CLASS_POINTER;
-
 import android.app.Presentation;
 import android.appwidget.AppWidgetHost;
 import android.appwidget.AppWidgetHostView;
@@ -18,10 +16,8 @@ import android.hardware.display.VirtualDisplay;
 import android.net.Uri;
 import android.os.SystemClock;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -62,6 +58,9 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private int mSurfaceWidth;
     private int mSurfaceHeight;
     private int mZoomRatio = 100;
+    private long mLastScrollTime = -1;
+    private int mLastScrollX = -1;
+    private int mLastScrollY = -1;
 
     protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
@@ -154,8 +153,6 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
     @Override
     public void onVisibleAreaChanged( @NonNull Rect visibleArea ) {
-        Log.i( TAG, "onVisibleAreaChanged: " + visibleArea.left + ", " + visibleArea.top + ", " + visibleArea.right + ", " + visibleArea.bottom + ", " + mSurfaceWidth + ", " + mSurfaceHeight );
-
         if ( mAppWidgetView == null ) {
             return;
         }
@@ -178,13 +175,33 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        int[] coordinates = new int[2];
-        mAppWidgetView.getLocationOnScreen( coordinates );
-        int xx = mVisibleArea.left + (int)x;
-        int yy = coordinates[1] + (int)y;
-        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, xx, yy, 0 ) );
-        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, xx, yy, 0 ) );
-        Log.i( TAG, "onClick x:" + x + ", y:" + y + ", " + xx + ", " + yy );
+        int clickX = (int)x + mVisibleArea.left;
+        int clickY = (int)y;
+        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, clickX, clickY, 0 ) );
+        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, clickX, clickY, 0 ) );
+    }
+
+    @Override
+    public void onScroll( float distanceX, float distanceY ) {
+        if ( mAppWidgetView == null ) {
+            return;
+        }
+
+        if ( mLastScrollTime < 0 || SystemClock.uptimeMillis() - mLastScrollTime > 500 ) {
+            mLastScrollX = mVisibleArea.centerX();
+            mLastScrollY = mVisibleArea.centerY();
+
+            mLastScrollTime = SystemClock.uptimeMillis();
+            mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_UP, mLastScrollX, mLastScrollY, 0 ) );
+            mLastScrollTime = SystemClock.uptimeMillis();
+            mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_DOWN, mLastScrollX, mLastScrollY, 0 ) );
+        }
+
+        mLastScrollX -= (int)distanceX;
+        mLastScrollY -= (int)distanceY;
+
+        mLastScrollTime = SystemClock.uptimeMillis();
+        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_MOVE, mLastScrollX, mLastScrollY, 0 ) );
     }
 
     @NonNull
