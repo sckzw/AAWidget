@@ -1,5 +1,7 @@
 package com.gitlab.sckzw.aawidget;
 
+import static android.view.InputDevice.SOURCE_CLASS_POINTER;
+
 import android.app.Presentation;
 import android.appwidget.AppWidgetHost;
 import android.appwidget.AppWidgetHostView;
@@ -19,6 +21,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.Surface;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -151,6 +154,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
     @Override
     public void onVisibleAreaChanged( @NonNull Rect visibleArea ) {
+        Log.i( TAG, "onVisibleAreaChanged: " + visibleArea.left + ", " + visibleArea.top + ", " + visibleArea.right + ", " + visibleArea.bottom + ", " + mSurfaceWidth + ", " + mSurfaceHeight );
+
         if ( mAppWidgetView == null ) {
             return;
         }
@@ -169,13 +174,17 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
     @Override
     public void onClick( float x, float y ) {
+        if ( mAppWidgetView == null ) {
+            return;
+        }
+
         int[] coordinates = new int[2];
         mAppWidgetView.getLocationOnScreen( coordinates );
-        int xx = coordinates[0] + (int)x;
+        int xx = mVisibleArea.left + (int)x;
         int yy = coordinates[1] + (int)y;
         mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, xx, yy, 0 ) );
         mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, xx, yy, 0 ) );
-        Log.i( TAG, "onClick x:" + x + ", y:" + y );
+        Log.i( TAG, "onClick x:" + x + ", y:" + y + ", " + xx + ", " + yy );
     }
 
     @NonNull
