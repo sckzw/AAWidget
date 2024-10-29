@@ -78,12 +78,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
         if ( !mWallpaperUri.isEmpty() ) {
-            try {
-                getContentResolver().takePersistableUriPermission( Uri.parse( mWallpaperUri ), Intent.FLAG_GRANT_READ_URI_PERMISSION );
-                addWallpaper( mWallpaperUri );
-            }
-            catch ( Exception ignored ) {
-            }
+            addWallpaper( Uri.parse( mWallpaperUri ) );
         }
 
         mLayoutWidgetPreview.getViewTreeObserver().addOnGlobalLayoutListener( new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -175,12 +170,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             new ActivityResultContracts.PickVisualMedia(),
             uri -> {
                 if ( uri != null ) {
-                    try {
-                        getContentResolver().takePersistableUriPermission( uri, Intent.FLAG_GRANT_READ_URI_PERMISSION );
-                        addWallpaper( uri.toString() );
-                    }
-                    catch ( Exception ignored ) {
-                    }
+                    addWallpaper( uri );
                 }
             } );
 
@@ -297,11 +287,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
     }
 
-    private void addWallpaper( String uriString ) {
+    private void addWallpaper( Uri uri ) {
         Bitmap bitmap = null;
 
         try {
-            Uri uri = Uri.parse( uriString );
+            getContentResolver().takePersistableUriPermission( uri, Intent.FLAG_GRANT_READ_URI_PERMISSION );
             bitmap = MediaStore.Images.Media.getBitmap( getContentResolver(), uri );
         }
         catch ( Exception ex ) {
@@ -311,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         mImageWallpaper.setImageBitmap( bitmap );
         mNavWidgetMenu.getMenu().findItem( R.id.nav_widget_wallpaper ).setTitle( R.string.remove_wallpaper );
 
-        mWallpaperUri = uriString;
+        mWallpaperUri = uri.toString();
         mSharedPreferences.edit().putString( "wallpaper_uri", mWallpaperUri ).commit();
     }
 
