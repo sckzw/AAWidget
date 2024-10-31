@@ -293,7 +293,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     }
 
     private final OnCarDataAvailableListener< Speed > mSpeedListener = data -> {
-        CarValue< Float > speed = data.getRawSpeedMetersPerSecond();
+        CarValue< Float > speed = data.getDisplaySpeedMetersPerSecond();
 
         if ( speed.getStatus() == CarValue.STATUS_SUCCESS && speed.getValue() != null ) {
             mSpeed = speed.getValue().intValue();
