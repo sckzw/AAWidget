@@ -12,8 +12,8 @@
     <string name="remove_wallpaper">壁紙を削除</string>
     <string name="enter_background_color_code">背景色コードは#RRGGBB形式で入力してください</string>
     <string name="failed_to_load_wallpaper_image_file">壁紙の画像ファイルのロードに失敗しました</string>
-    <string name="service_name_widget_2">ウィジェット2</string>
-    <string name="service_name_widget_1">ウィジェット1</string>
+    <string name="service_name_widget_2">Widget 2</string>
+    <string name="service_name_widget_1">Widget 1</string>
     <string name="touch_operations_are_disabled">安全のため走行中のタッチ操作は無効化されています</string>
     <string name="pref_permission_title">権限</string>
     <string name="pref_permission_summary">車速情報にアクセスする権限を許可する</string>
