@@ -14,4 +14,6 @@
     <string name="service_name_widget_2">Widget 2</string>
     <string name="service_name_widget_1">Widget 1</string>
     <string name="touch_operations_are_disabled">For your safety, touch operations are disabled while driving</string>
+    <string name="pref_permission_title">Permissions</string>
+    <string name="pref_permission_summary">Grant permission to access vehicle speed information</string>
 </resources>

@@ -8,6 +8,7 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -15,6 +16,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -28,6 +30,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
@@ -141,6 +146,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public void onCreatePreferences( Bundle savedInstanceState, String rootKey ) {
             setPreferencesFromResource( R.xml.root_preferences, rootKey );
+        }
+
+        @Override
+        public boolean onPreferenceTreeClick( @NonNull Preference preference ) {
+            if ( preference.hasKey() && preference.getKey().equals( "permission" ) ) {
+                String[] permissions = { "com.google.android.gms.permission.CAR_SPEED" };
+
+                if ( ContextCompat.checkSelfPermission( this.requireActivity(), permissions[0] ) == PackageManager.PERMISSION_DENIED ) {
+                    ActivityCompat.requestPermissions( this.requireActivity(), permissions, 0 );
+                }
+                else {
+                    startActivity( new Intent( Settings.ACTION_APPLICATION_DETAILS_SETTINGS )
+                            .setData( Uri.parse( "package:com.gitlab.sckzw.aawidget" ) ) );
+                }
+
+                return true;
+            }
+
+            return super.onPreferenceTreeClick( preference );
         }
     }
 

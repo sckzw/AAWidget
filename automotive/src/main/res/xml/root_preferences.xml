@@ -10,5 +10,10 @@
             app:defaultValue="#282A2C"
             app:useSimpleSummaryProvider="true"
             app:iconSpaceReserved="false" />
+        <Preference
+            app:key="permission"
+            app:title="@string/pref_permission_title"
+            app:summary="@string/pref_permission_summary"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 </androidx.preference.PreferenceScreen>

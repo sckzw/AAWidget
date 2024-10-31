@@ -15,4 +15,6 @@
     <string name="service_name_widget_2">ウィジェット2</string>
     <string name="service_name_widget_1">ウィジェット1</string>
     <string name="touch_operations_are_disabled">安全のため走行中のタッチ操作は無効化されています</string>
+    <string name="pref_permission_title">権限</string>
+    <string name="pref_permission_summary">車速情報にアクセスする権限を許可する</string>
 </resources>
