@@ -14,7 +14,8 @@
         android:layout_marginVertical="8dp"
         android:layout_marginStart="16dp"
         android:text="@string/pref_category_widget_preview_title"
-        android:textColor="?attr/colorAccent" />
+        android:textColor="?attr/colorAccent"
+        android:textStyle="bold" />
 
     <FrameLayout
         android:id="@+id/layout_widget_preview"
