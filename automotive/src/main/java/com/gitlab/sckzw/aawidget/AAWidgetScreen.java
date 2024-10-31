@@ -29,6 +29,11 @@ import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
 import androidx.car.app.SurfaceCallback;
 import androidx.car.app.SurfaceContainer;
+import androidx.car.app.hardware.CarHardwareManager;
+import androidx.car.app.hardware.common.CarValue;
+import androidx.car.app.hardware.common.OnCarDataAvailableListener;
+import androidx.car.app.hardware.info.CarInfo;
+import androidx.car.app.hardware.info.Speed;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
@@ -61,6 +66,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private long mLastScrollTime = -1;
     private int mLastScrollX = -1;
     private int mLastScrollY = -1;
+    private int mSpeed = -1;
 
     protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
@@ -175,6 +181,11 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
+        if ( mSpeed != 0 ) {
+            CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
+            return;
+        }
+
         int clickX = (int)x + mVisibleArea.left;
         int clickY = (int)y;
         mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, clickX, clickY, 0 ) );
@@ -184,6 +195,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @Override
     public void onScroll( float distanceX, float distanceY ) {
         if ( mAppWidgetView == null ) {
+            return;
+        }
+
+        if ( mSpeed != 0 ) {
             return;
         }
 
@@ -275,6 +290,37 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                 .build() );
 
         return builder.build();
+    }
+
+    private final OnCarDataAvailableListener< Speed > mSpeedListener = data -> {
+        CarValue< Float > speed = data.getRawSpeedMetersPerSecond();
+
+        if ( speed.getStatus() == CarValue.STATUS_SUCCESS && speed.getValue() != null ) {
+            mSpeed = speed.getValue().intValue();
+        }
+        else {
+            mSpeed = -1;
+        }
+    };
+
+    @Override
+    public void onResume( @NonNull LifecycleOwner owner ) {
+        CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
+        try {
+            carInfo.addSpeedListener( mCarContext.getMainExecutor(), mSpeedListener );
+        }
+        catch ( SecurityException ignored ) {
+        }
+    }
+
+    @Override
+    public void onPause( @NonNull LifecycleOwner owner ) {
+        CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
+        try {
+            carInfo.removeSpeedListener( mSpeedListener );
+        }
+        catch ( SecurityException ignored ) {
+        }
     }
 
     @Override
