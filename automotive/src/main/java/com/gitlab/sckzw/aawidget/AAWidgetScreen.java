@@ -235,11 +235,12 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        if ( mSpeed != 0 ) {
-            return;
-        }
-
         if ( mIsInPanMode ) {
+            if ( mSpeed != 0 ) {
+                CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
+                return;
+            }
+
             mPointerX += (int)distanceX / 2;
             mPointerY += (int)distanceY / 2;
 
@@ -249,6 +250,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             mPointerImageView.setLayoutParams( layoutParams );
         }
         else {
+            if ( mSpeed != 0 ) {
+                return;
+            }
+
             if ( mLastScrollTime < 0 || SystemClock.uptimeMillis() - mLastScrollTime > 500 ) {
                 mLastScrollX = mVisibleArea.centerX();
                 mLastScrollY = mVisibleArea.centerY();
@@ -271,6 +276,11 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int scrollX = mPointerX;
         int scrollY = mPointerY;
         long scrollTime;
+
+        if ( mSpeed != 0 ) {
+            CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
+            return;
+        }
 
         scrollTime = SystemClock.uptimeMillis();
         mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( scrollTime, scrollTime, MotionEvent.ACTION_DOWN, scrollX, scrollY, 0 ) );
