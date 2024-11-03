@@ -18,6 +18,7 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.view.MotionEvent;
 import android.view.Surface;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -37,9 +38,9 @@ import androidx.car.app.hardware.info.Speed;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
-import androidx.car.app.model.OnClickListener;
 import androidx.car.app.model.Template;
 import androidx.car.app.navigation.model.NavigationTemplate;
+import androidx.car.app.navigation.model.PanModeListener;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -58,15 +59,18 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private VirtualDisplay mVirtualDisplay;
     private Presentation mPresentation;
     private AppWidgetHostView mAppWidgetView;
+    private ImageView mPointerImageView;
 
     private Rect mVisibleArea = new Rect();
     private int mSurfaceWidth;
     private int mSurfaceHeight;
-    private int mZoomRatio = 100;
     private long mLastScrollTime = -1;
     private int mLastScrollX = -1;
     private int mLastScrollY = -1;
+    private int mPointerX;
+    private int mPointerY;
     private int mSpeed = -1;
+    private boolean mIsInPanMode = false;
 
     protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
@@ -146,6 +150,16 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             layoutWidget.addView( mAppWidgetView );
         }
 
+        mPointerImageView = new ImageView( mCarContext );
+        mPointerImageView.setImageResource( R.drawable.ic_pointer );
+        mPointerImageView.setVisibility( View.INVISIBLE );
+
+        float density = Resources.getSystem().getDisplayMetrics().density;
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams( (int)( 12 * density ), (int)( 12 * density ) );
+        layoutParams.leftMargin = mPointerX = mSurfaceWidth / 2;
+        layoutParams.topMargin = mPointerY = mSurfaceHeight / 2;
+        layoutWidget.addView( mPointerImageView, layoutParams );
+
         mPresentation.setContentView( layoutWidget );
         mPresentation.show();
     }
@@ -168,11 +182,29 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int height = visibleArea.height();
 
         float density = Resources.getSystem().getDisplayMetrics().density;
-        width = (int)( width / density * ( mZoomRatio / 100.0f ) );
-        height = (int)( height / density * ( mZoomRatio / 100.0f ) );
+        width = (int)( width / density );
+        height = (int)( height / density );
 
         mAppWidgetView.setPadding( visibleArea.left, visibleArea.top, mSurfaceWidth - visibleArea.right, mSurfaceHeight - visibleArea.bottom );
         mAppWidgetView.updateAppWidgetSize( null, width, height, width, height );
+
+        if ( mPointerX < visibleArea.left ) {
+            mPointerX = visibleArea.left;
+        }
+        if ( mPointerX > visibleArea.right ) {
+            mPointerX = visibleArea.right;
+        }
+        if ( mPointerY < visibleArea.top ) {
+            mPointerY = visibleArea.top;
+        }
+        if ( mPointerY > visibleArea.bottom ) {
+            mPointerY = visibleArea.bottom;
+        }
+
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams)mPointerImageView.getLayoutParams();
+        layoutParams.leftMargin = mPointerX;
+        layoutParams.topMargin = mPointerY;
+        mPointerImageView.setLayoutParams( layoutParams );
     }
 
     @Override
@@ -186,8 +218,13 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        int clickX = (int)x + mVisibleArea.left;
+        int clickX = (int)x;
         int clickY = (int)y;
+
+        if ( !mIsInPanMode ) {
+            clickX += mVisibleArea.left;
+        }
+
         mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_DOWN, clickX, clickY, 0 ) );
         mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, clickX, clickY, 0 ) );
     }
@@ -202,21 +239,48 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        if ( mLastScrollTime < 0 || SystemClock.uptimeMillis() - mLastScrollTime > 500 ) {
-            mLastScrollX = mVisibleArea.centerX();
-            mLastScrollY = mVisibleArea.centerY();
+        if ( mIsInPanMode ) {
+            mPointerX += (int)distanceX / 2;
+            mPointerY += (int)distanceY / 2;
 
-            mLastScrollTime = SystemClock.uptimeMillis();
-            mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_UP, mLastScrollX, mLastScrollY, 0 ) );
-            mLastScrollTime = SystemClock.uptimeMillis();
-            mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_DOWN, mLastScrollX, mLastScrollY, 0 ) );
+            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams)mPointerImageView.getLayoutParams();
+            layoutParams.leftMargin = mPointerX;
+            layoutParams.topMargin = mPointerY;
+            mPointerImageView.setLayoutParams( layoutParams );
         }
+        else {
+            if ( mLastScrollTime < 0 || SystemClock.uptimeMillis() - mLastScrollTime > 500 ) {
+                mLastScrollX = mVisibleArea.centerX();
+                mLastScrollY = mVisibleArea.centerY();
 
-        mLastScrollX -= (int)distanceX;
-        mLastScrollY -= (int)distanceY;
+                mLastScrollTime = SystemClock.uptimeMillis();
+                mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_UP, mLastScrollX, mLastScrollY, 0 ) );
+                mLastScrollTime = SystemClock.uptimeMillis();
+                mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_DOWN, mLastScrollX, mLastScrollY, 0 ) );
+            }
 
-        mLastScrollTime = SystemClock.uptimeMillis();
-        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_MOVE, mLastScrollX, mLastScrollY, 0 ) );
+            mLastScrollX -= (int)distanceX;
+            mLastScrollY -= (int)distanceY;
+
+            mLastScrollTime = SystemClock.uptimeMillis();
+            mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( mLastScrollTime, mLastScrollTime, MotionEvent.ACTION_MOVE, mLastScrollX, mLastScrollY, 0 ) );
+        }
+    }
+
+    private void scroll( int distanceY ) {
+        int scrollX = mPointerX;
+        int scrollY = mPointerY;
+        long scrollTime;
+
+        scrollTime = SystemClock.uptimeMillis();
+        mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( scrollTime, scrollTime, MotionEvent.ACTION_DOWN, scrollX, scrollY, 0 ) );
+
+        for ( int i = 0; i < 5; i ++ ) {
+            scrollY += distanceY / 5;
+
+            scrollTime = SystemClock.uptimeMillis();
+            mAppWidgetView.dispatchTouchEvent( MotionEvent.obtain( scrollTime, scrollTime, MotionEvent.ACTION_MOVE, scrollX, scrollY, 0 ) );
+        }
     }
 
     @NonNull
@@ -235,59 +299,40 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
         builder.setActionStrip( new ActionStrip.Builder()
                 .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder(
-                                IconCompat.createWithResource(
-                                        getCarContext(),
-                                        iconId ) )
-                                .build() )
-                        .setOnClickListener( new OnClickListener() {
-                            @Override
-                            public void onClick() {
-                                mZoomRatio = 100;
-                                onVisibleAreaChanged( mVisibleArea );
-                            }
-                        } )
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, iconId ) ).build() )
                         .build() )
                 .build() );
 
         builder.setMapActionStrip( new ActionStrip.Builder()
-                .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder(
-                                IconCompat.createWithResource(
-                                        getCarContext(),
-                                        R.drawable.ic_zoom_out ) )
-                                .build() )
-                        .setOnClickListener( new OnClickListener() {
-                            @Override
-                            public void onClick() {
-                                mZoomRatio -= 10;
-                                if ( mZoomRatio < 10 ) {
-                                    mZoomRatio = 10;
-                                }
-                                onVisibleAreaChanged( mVisibleArea );
-                            }
-                        } )
-                        .build() )
-                .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder(
-                                IconCompat.createWithResource(
-                                        getCarContext(),
-                                        R.drawable.ic_zoom_in ) )
-                                .build() )
-                        .setOnClickListener( new OnClickListener() {
-                            @Override
-                            public void onClick() {
-                                mZoomRatio += 10;
-                                if ( mZoomRatio > 200 ) {
-                                    mZoomRatio = 200;
-                                }
-                                onVisibleAreaChanged( mVisibleArea );
-                            }
-                        } )
-                        .build() )
                 .addAction( new Action.Builder( Action.PAN )
                         .build() )
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_click ) ).build() )
+                        .setOnClickListener( () -> AAWidgetScreen.this.onClick( (float)mPointerX, (float)mPointerY ) )
+                        .build() )
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_scroll_up ) ).build() )
+                        .setOnClickListener( () -> scroll( 50 ) )
+                        .build() )
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_scroll_down ) ).build() )
+                        .setOnClickListener( () -> scroll( -50 ) )
+                        .build() )
                 .build() );
+
+        builder.setPanModeListener( new PanModeListener() {
+            @Override
+            public void onPanModeChanged( boolean isInPanMode ) {
+                mIsInPanMode = isInPanMode;
+
+                if ( isInPanMode ) {
+                    mPointerImageView.setVisibility( View.VISIBLE );
+                }
+                else {
+                    mPointerImageView.setVisibility( View.INVISIBLE );
+                }
+            }
+        } );
 
         return builder.build();
     }
