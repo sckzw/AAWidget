@@ -126,6 +126,11 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                 return false;
             }
         } );
+
+        String[] permissions = { "com.google.android.gms.permission.CAR_SPEED" };
+        if ( ContextCompat.checkSelfPermission( this, permissions[0] ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions( this, permissions, 0 );
+        }
     }
 
     @Override
@@ -151,15 +156,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         @Override
         public boolean onPreferenceTreeClick( @NonNull Preference preference ) {
             if ( preference.hasKey() && preference.getKey().equals( "permission" ) ) {
-                String[] permissions = { "com.google.android.gms.permission.CAR_SPEED" };
-
-                if ( ContextCompat.checkSelfPermission( this.requireActivity(), permissions[0] ) == PackageManager.PERMISSION_DENIED ) {
-                    ActivityCompat.requestPermissions( this.requireActivity(), permissions, 0 );
-                }
-                else {
-                    startActivity( new Intent( Settings.ACTION_APPLICATION_DETAILS_SETTINGS )
-                            .setData( Uri.parse( "package:com.gitlab.sckzw.aawidget" ) ) );
-                }
+                startActivity( new Intent( Settings.ACTION_APPLICATION_DETAILS_SETTINGS )
+                        .setData( Uri.parse( "package:com.gitlab.sckzw.aawidget" ) ) );
 
                 return true;
             }
