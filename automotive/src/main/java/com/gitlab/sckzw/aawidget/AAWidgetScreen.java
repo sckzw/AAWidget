@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -130,6 +131,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
             try {
                 Uri uri = Uri.parse( wallpaperUri );
+                mCarContext.getContentResolver().takePersistableUriPermission( uri, Intent.FLAG_GRANT_READ_URI_PERMISSION );
                 bitmap = MediaStore.Images.Media.getBitmap( mCarContext.getContentResolver(), uri );
             }
             catch ( Exception ex ) {
