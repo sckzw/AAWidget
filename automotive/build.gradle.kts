@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace = "com.gitlab.sckzw.aawidget"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gitlab.sckzw.aawidget"
         minSdk = 28
-        targetSdk = 34
-        versionCode = 5
-        versionName = "0.3.2"
+        targetSdk = 36
+        versionCode = 6
+        versionName = "0.3.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,8 +32,8 @@ android {
 }
 
 dependencies {
-    implementation("androidx.car.app:app:1.4.0")
-    implementation("androidx.car.app:app-projected:1.4.0")
+    implementation("androidx.car.app:app:1.7.0")
+    implementation("androidx.car.app:app-projected:1.7.0")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
