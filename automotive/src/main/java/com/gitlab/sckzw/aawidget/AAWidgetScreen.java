@@ -317,6 +317,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
         builder.setMapActionStrip( new ActionStrip.Builder()
                 .addAction( new Action.Builder( Action.PAN )
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_pan ) ).build() )
                         .build() )
                 .addAction( new Action.Builder()
                         .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_click ) ).build() )
