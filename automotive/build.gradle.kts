@@ -32,8 +32,8 @@ android {
 }
 
 dependencies {
-    implementation("androidx.car.app:app:1.7.0")
-    implementation("androidx.car.app:app-projected:1.7.0")
+    implementation(libs.car.app)
+    implementation(libs.car.app.projected)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
