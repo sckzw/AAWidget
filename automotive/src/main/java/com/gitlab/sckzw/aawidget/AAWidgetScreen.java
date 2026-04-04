@@ -14,7 +14,11 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.icu.util.TimeZone;
+import android.location.Location;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.view.MotionEvent;
@@ -34,18 +38,34 @@ import androidx.car.app.SurfaceContainer;
 import androidx.car.app.hardware.CarHardwareManager;
 import androidx.car.app.hardware.common.CarValue;
 import androidx.car.app.hardware.common.OnCarDataAvailableListener;
+import androidx.car.app.hardware.info.CarHardwareLocation;
 import androidx.car.app.hardware.info.CarInfo;
+import androidx.car.app.hardware.info.CarSensors;
 import androidx.car.app.hardware.info.Speed;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
+import androidx.car.app.model.CarColor;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.CarText;
+import androidx.car.app.model.DateTimeWithZone;
+import androidx.car.app.model.Distance;
 import androidx.car.app.model.Template;
+import androidx.car.app.navigation.NavigationManager;
+import androidx.car.app.navigation.NavigationManagerCallback;
+import androidx.car.app.navigation.model.Destination;
+import androidx.car.app.navigation.model.Maneuver;
 import androidx.car.app.navigation.model.NavigationTemplate;
 import androidx.car.app.navigation.model.PanModeListener;
+import androidx.car.app.navigation.model.Step;
+import androidx.car.app.navigation.model.TravelEstimate;
+import androidx.car.app.navigation.model.Trip;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.preference.PreferenceManager;
+
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLifecycleObserver {
     private final static String TAG = AAWidgetScreen.class.getSimpleName();
@@ -55,6 +75,9 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private final AppWidgetHost mAppWidgetHost;
     private final AppWidgetManager mAppWidgetManager;
     private final SharedPreferences mSharedPreferences;
+    private final NavigationManager mNavigationManager;
+    private boolean mIsNavigating = false;
+    private final Handler mHandler = new Handler( Looper.getMainLooper() );
 
     private Surface mSurface;
     private VirtualDisplay mVirtualDisplay;
@@ -70,8 +93,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private int mLastScrollY = -1;
     private int mPointerX;
     private int mPointerY;
-    private int mSpeed = -1;
     private boolean mIsInPanMode = false;
+    private int mTripType = 0;
+    private float mSpeed = 0;
+    private Location mLocation = null;
 
     protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
@@ -84,10 +109,201 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         mAppWidgetHost = AAWidgetApplication.getAppWidgetHost(); // new AppWidgetHost( mAppContext, 0 );
         mAppWidgetManager = AAWidgetApplication.getAppWidgetManager(); // AppWidgetManager.getInstance( mAppContext );
 
+        mNavigationManager = carContext.getCarService( NavigationManager.class );
+        mNavigationManager.setNavigationManagerCallback( new NavigationManagerCallback() {
+            @Override
+            public void onStopNavigation() {
+                stopNavigation();
+            }
+        } );
+
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( mAppContext );
 
         getLifecycle().addObserver( this );
     }
+
+    public void startNavigation() {
+        if ( !mIsNavigating ) {
+            mNavigationManager.navigationStarted();
+            mIsNavigating = true;
+
+            mHandler.post( mUpdateRunnable );
+        }
+    }
+
+    public void stopNavigation() {
+        if ( mIsNavigating ) {
+            mIsNavigating = false;
+            mNavigationManager.navigationEnded();
+
+            mHandler.removeCallbacks( mUpdateRunnable );
+        }
+    }
+
+    private int mManeuverType = 0;
+    private int mRoundaboutExitAngle = 0;
+    private int mRoundaboutExitNumber = 0;
+    private int mRoadNumber = 0;
+    private double mDistance = 0.1;
+    private int mDistanceUnit = 0;
+    private int mRemainingSeconds = 0;
+
+    public void updateTripTest() {
+        if ( !mIsNavigating ) return;
+
+        String roadName = "Street #" + mRoadNumber;
+
+        try {
+            Maneuver.Builder maneuverBuilder = new Maneuver.Builder( mManeuverType + 1 );
+
+            if ( mManeuverType + 1 == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW ||
+                    mManeuverType + 1 == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW ||
+                    mManeuverType + 1 == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE ||
+                    mManeuverType + 1 == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW_WITH_ANGLE ) {
+                maneuverBuilder.setRoundaboutExitNumber( mRoundaboutExitNumber + 1 );
+            }
+
+            if ( mManeuverType + 1 == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE ||
+                    mManeuverType + 1 == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW_WITH_ANGLE ) {
+                maneuverBuilder.setRoundaboutExitAngle( mRoundaboutExitAngle + 1 );
+            }
+
+            Maneuver maneuver = maneuverBuilder
+                    .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_pan ) ).build() )
+                    .build();
+
+            Step step = new Step.Builder( roadName )
+                    .setManeuver( maneuver )
+                    .setRoad( roadName )
+                    .build();
+
+            Destination destination = new Destination.Builder()
+                    .setAddress( "Address" )
+                    .setName( "Destination" )
+                    .setImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_wallpaper ) ).build() )
+                    .build();
+
+            Distance dist = Distance.create( mDistance, mDistanceUnit + 1 );
+
+            long currentTimeMillis = System.currentTimeMillis();
+            long remainingSecondsInMillis = TimeUnit.SECONDS.toMillis( mRemainingSeconds );
+            long futureTimeMillis = currentTimeMillis + remainingSecondsInMillis;
+
+            DateTimeWithZone arrivalTime = DateTimeWithZone.create(
+                    futureTimeMillis,
+                    (int)TimeUnit.MILLISECONDS.toSeconds( TimeZone.getDefault().getOffset( futureTimeMillis ) ),
+                    TimeZone.getDefault().getID()
+            );
+
+            TravelEstimate estimate = new TravelEstimate.Builder( dist, arrivalTime )
+                    .setRemainingTimeSeconds( mRemainingSeconds )
+                    .setRemainingTimeColor( CarColor.RED )
+                    .setRemainingDistanceColor( CarColor.BLUE )
+                    .setTripIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
+                    .setTripText( CarText.create( "TripText" ) )
+                    .build();
+
+            Trip trip = new Trip.Builder()
+                    .addDestination( destination, estimate )
+                    .addStep( step, estimate )
+                    .setLoading( false )
+                    .setCurrentRoad( "CurrentRoad" )
+                    .build();
+
+            mNavigationManager.updateTrip( trip );
+        } catch ( Exception e ) {
+            e.printStackTrace();
+        }
+
+        mManeuverType = ( mManeuverType + 1 ) % 50;
+        if ( mManeuverType == 29 ) mManeuverType = 31;
+        if ( mManeuverType == 30 ) mManeuverType = 31;
+        mRoundaboutExitAngle = ( mRoundaboutExitAngle + 1 ) % 360;
+        mRoundaboutExitNumber = ( mRoundaboutExitNumber + 1 ) % 24;
+        mRoadNumber = mRoadNumber + 1;
+        mDistance = mDistance + 1;
+        mDistanceUnit = ( mDistanceUnit + 1 ) % 7;
+        mRemainingSeconds = mRemainingSeconds + 30;
+    }
+
+    public void updateTripType() {
+        mTripType = ( mTripType + 1 ) % 5;
+    }
+
+    public void updateTrip() {
+        if ( !mIsNavigating ) return;
+
+        try {
+            Maneuver maneuver = new Maneuver.Builder( Maneuver.TYPE_DEPART ).build();
+
+            Step step = new Step.Builder( "Speed" )
+                    .setManeuver( maneuver )
+                    .build();
+
+            Destination destination = new Destination.Builder()
+                    .setName( "Speed" )
+                    .build();
+
+            Distance dist = Distance.create( 777, Distance.UNIT_YARDS );;
+            if ( mTripType == 0 ) {
+                if ( mLocation != null && mLocation.hasSpeed() ) {
+                    dist = Distance.create( mLocation.getSpeed() * 3.6f, Distance.UNIT_KILOMETERS );
+                }
+            }
+            else if ( mTripType == 1 ) {
+                dist = Distance.create( Math.abs( mSpeed ) * 3.6f, Distance.UNIT_KILOMETERS );
+            }
+            else if ( mTripType == 2 ) {
+                if ( mLocation != null && mLocation.hasAltitude() ) {
+                    dist = Distance.create( mLocation.getAltitude(), Distance.UNIT_METERS );
+                }
+            }
+            else if ( mTripType == 3 ) {
+                Calendar now = Calendar.getInstance();
+                int hour = now.get( Calendar.HOUR_OF_DAY );
+                int minute = now.get( Calendar.MINUTE );
+
+                dist = Distance.create( ( hour * 100 ) + minute, Distance.UNIT_KILOMETERS );
+            }
+            else if ( mTripType == 4 ) {
+                Calendar now = Calendar.getInstance();
+                int month = now.get( Calendar.MONTH ) + 1;
+                int day = now.get( Calendar.DAY_OF_MONTH );
+
+                dist = Distance.create( ( month * 100 ) + day, Distance.UNIT_KILOMETERS );
+            }
+
+            long currentTimeMillis = System.currentTimeMillis();
+            DateTimeWithZone arrivalTime = DateTimeWithZone.create(
+                    currentTimeMillis,
+                    (int)TimeUnit.MILLISECONDS.toSeconds( TimeZone.getDefault().getOffset( currentTimeMillis ) ),
+                    TimeZone.getDefault().getID()
+            );
+
+            TravelEstimate estimate = new TravelEstimate.Builder( dist, arrivalTime )
+                    .build();
+
+            Trip trip = new Trip.Builder()
+                    .addDestination( destination, estimate )
+                    .addStep( step, estimate )
+                    .setLoading( false )
+                    .build();
+
+            mNavigationManager.updateTrip( trip );
+        } catch ( Exception e ) {
+            e.printStackTrace();
+        }
+    }
+
+    private final Runnable mUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if ( mIsNavigating ) {
+                updateTrip();
+                mHandler.postDelayed( this, 250 );
+            }
+        }
+    };
 
     @Override
     public void onSurfaceAvailable( @NonNull SurfaceContainer surfaceContainer ) {
@@ -215,7 +431,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        if ( mSpeed != 0 ) {
+        if ( (int)mSpeed != 0 ) {
             CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
             return;
         }
@@ -238,7 +454,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         }
 
         if ( mIsInPanMode ) {
-            if ( mSpeed != 0 ) {
+            if ( (int)mSpeed != 0 ) {
                 CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
                 return;
             }
@@ -252,7 +468,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             mPointerImageView.setLayoutParams( layoutParams );
         }
         else {
-            if ( mSpeed != 0 ) {
+            if ( (int)mSpeed != 0 ) {
                 return;
             }
 
@@ -279,7 +495,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int scrollY = mPointerY;
         long scrollTime;
 
-        if ( mSpeed != 0 ) {
+        if ( (int)mSpeed != 0 ) {
             CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
             return;
         }
@@ -310,6 +526,18 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         NavigationTemplate.Builder builder = new NavigationTemplate.Builder();
 
         builder.setActionStrip( new ActionStrip.Builder()
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
+                        .setOnClickListener( this::startNavigation )
+                        .build() )
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_click ) ).build() )
+                        .setOnClickListener( this::updateTripType )
+                        .build() )
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_stop ) ).build() )
+                        .setOnClickListener( this::stopNavigation )
+                        .build() )
                 .addAction( new Action.Builder()
                         .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, iconId ) ).build() )
                         .build() )
@@ -354,18 +582,31 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         CarValue< Float > speed = data.getDisplaySpeedMetersPerSecond();
 
         if ( speed.getStatus() == CarValue.STATUS_SUCCESS && speed.getValue() != null ) {
-            mSpeed = speed.getValue().intValue();
+            mSpeed = speed.getValue();
         }
         else {
             mSpeed = -1;
         }
     };
 
+    private final OnCarDataAvailableListener< CarHardwareLocation > mCarLocationListener = data -> {
+        CarValue< Location > location = data.getLocation();
+
+        if ( location.getStatus() == CarValue.STATUS_SUCCESS && location.getValue() != null ) {
+            mLocation = location.getValue();
+        }
+        else {
+            mLocation = null;
+        }
+    };
+
     @Override
     public void onResume( @NonNull LifecycleOwner owner ) {
         CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
+        CarSensors carSensors = mCarContext.getCarService( CarHardwareManager.class ).getCarSensors();
         try {
             carInfo.addSpeedListener( mCarContext.getMainExecutor(), mSpeedListener );
+            carSensors.addCarHardwareLocationListener( CarSensors.UPDATE_RATE_NORMAL, mCarContext.getMainExecutor(), mCarLocationListener );
         }
         catch ( SecurityException ignored ) {
         }
@@ -374,8 +615,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @Override
     public void onPause( @NonNull LifecycleOwner owner ) {
         CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
+        CarSensors carSensors = mCarContext.getCarService( CarHardwareManager.class ).getCarSensors();
         try {
             carInfo.removeSpeedListener( mSpeedListener );
+            carSensors.removeCarHardwareLocationListener( mCarLocationListener );
         }
         catch ( SecurityException ignored ) {
         }
