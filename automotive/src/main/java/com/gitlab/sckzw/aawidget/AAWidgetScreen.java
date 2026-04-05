@@ -8,6 +8,7 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -76,15 +77,40 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         super( carContext );
         mCarAppServiceClass = carAppServiceClass;
 
-        mAppContext = carContext.getApplicationContext();
+        Context appContext = carContext.getApplicationContext();
+        Configuration appConfig = appContext.getResources().getConfiguration();
+        Configuration carConfig = carContext.getResources().getConfiguration();
+        Configuration newConfig = new Configuration( appConfig );
+
+        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( appContext );
+
+        int densityDpi;
+        try {
+            densityDpi = Integer.parseInt( mSharedPreferences.getString( "density_dpi", "160" ) );
+        }
+        catch ( NumberFormatException ex ) {
+            densityDpi = carConfig.densityDpi;
+        }
+
+        float fontScale;
+        try {
+            fontScale = Float.parseFloat( mSharedPreferences.getString( "font_scale", "1.0" ) );
+        }
+        catch ( NumberFormatException ex ) {
+            fontScale = carConfig.fontScale;
+        }
+
+        newConfig.densityDpi = densityDpi;
+        newConfig.fontScale = fontScale;
+        newConfig.uiMode = ( appConfig.uiMode & ~Configuration.UI_MODE_NIGHT_MASK ) | ( carConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK );
+
+        mAppContext = appContext.createConfigurationContext( newConfig );
         mCarContext = carContext;
+
+        mAppWidgetHost = AAWidgetApplication.getAppWidgetHost();
+        mAppWidgetManager = AAWidgetApplication.getAppWidgetManager();
+
         mCarContext.getCarService( AppManager.class ).setSurfaceCallback( this );
-
-        mAppWidgetHost = AAWidgetApplication.getAppWidgetHost(); // new AppWidgetHost( mAppContext, 0 );
-        mAppWidgetManager = AAWidgetApplication.getAppWidgetManager(); // AppWidgetManager.getInstance( mAppContext );
-
-        mSharedPreferences = PreferenceManager.getDefaultSharedPreferences( mAppContext );
-
         getLifecycle().addObserver( this );
     }
 
@@ -146,7 +172,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
         if ( appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
             AppWidgetProviderInfo appWidgetInfo = mAppWidgetManager.getAppWidgetInfo( appWidgetId );
-            mAppWidgetView = mAppWidgetHost.createView( mCarContext, appWidgetId, appWidgetInfo );
+            mAppWidgetView = mAppWidgetHost.createView( mAppContext, appWidgetId, appWidgetInfo );
 
             layoutWidget.addView( mAppWidgetView );
         }
@@ -182,7 +208,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int width = visibleArea.width();
         int height = visibleArea.height();
 
-        float density = mCarContext.getResources().getDisplayMetrics().density;
+        float density = mAppContext.getResources().getDisplayMetrics().density;
         width = (int)( width / density );
         height = (int)( height / density );
 

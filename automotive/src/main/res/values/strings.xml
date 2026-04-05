@@ -16,4 +16,8 @@
     <string name="touch_operations_are_disabled">For your safety, touch operations are disabled while driving</string>
     <string name="pref_permission_title">Permissions</string>
     <string name="pref_permission_summary">Allow access to location information (car speed)</string>
+    <string name="pref_density_dpi_title">Widget view density [dpi]</string>
+    <string name="pref_density_dpi_summary">Enter widget view density</string>
+    <string name="pref_font_scale_title">Widget font scale</string>
+    <string name="pref_font_scale_summary">Enter widget font scale</string>
 </resources>

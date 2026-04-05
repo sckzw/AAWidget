@@ -1,8 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.preference.PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="@string/pref_category_setting_title" app:iconSpaceReserved="false">
+        <EditTextPreference
+            app:key="density_dpi"
+            app:title="@string/pref_density_dpi_title"
+            app:summary="@string/pref_density_dpi_summary"
+            app:defaultValue="160"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"
+            android:inputType="number" />
+        <EditTextPreference
+            app:key="font_scale"
+            app:title="@string/pref_font_scale_title"
+            app:summary="@string/pref_font_scale_summary"
+            app:defaultValue="1.0"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false"
+            android:inputType="numberDecimal" />
         <EditTextPreference
             app:key="background_color"
             app:title="@string/pref_background_color_title"

@@ -17,4 +17,8 @@
     <string name="touch_operations_are_disabled">安全のため走行中のタッチ操作は無効化されています</string>
     <string name="pref_permission_title">権限</string>
     <string name="pref_permission_summary">位置情報(車の速度)にアクセスする権限を許可する</string>
+    <string name="pref_density_dpi_title">ウィジェットビュー密度 [dpi]</string>
+    <string name="pref_density_dpi_summary">ウィジェットビュー密度を入力する</string>
+    <string name="pref_font_scale_title">ウィジェットフォントスケール</string>
+    <string name="pref_font_scale_summary">ウィジェットフォントスケールを入力する</string>
 </resources>
