@@ -14,7 +14,11 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
+import android.icu.util.TimeZone;
+import android.location.Location;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.view.MotionEvent;
@@ -34,27 +38,43 @@ import androidx.car.app.SurfaceContainer;
 import androidx.car.app.hardware.CarHardwareManager;
 import androidx.car.app.hardware.common.CarValue;
 import androidx.car.app.hardware.common.OnCarDataAvailableListener;
+import androidx.car.app.hardware.info.CarHardwareLocation;
 import androidx.car.app.hardware.info.CarInfo;
+import androidx.car.app.hardware.info.CarSensors;
 import androidx.car.app.hardware.info.Speed;
 import androidx.car.app.model.Action;
 import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.DateTimeWithZone;
+import androidx.car.app.model.Distance;
 import androidx.car.app.model.Template;
+import androidx.car.app.navigation.NavigationManager;
+import androidx.car.app.navigation.NavigationManagerCallback;
+import androidx.car.app.navigation.model.Destination;
+import androidx.car.app.navigation.model.Maneuver;
 import androidx.car.app.navigation.model.NavigationTemplate;
 import androidx.car.app.navigation.model.PanModeListener;
+import androidx.car.app.navigation.model.Step;
+import androidx.car.app.navigation.model.TravelEstimate;
+import androidx.car.app.navigation.model.Trip;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.preference.PreferenceManager;
 
+import java.util.concurrent.TimeUnit;
+
 public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLifecycleObserver {
     private final static String TAG = AAWidgetScreen.class.getSimpleName();
     private final Class< ? extends CarAppService > mCarAppServiceClass;
+    private final NavigationManager mNavigationManager;
     private final Context mAppContext;
     private final CarContext mCarContext;
     private final AppWidgetHost mAppWidgetHost;
     private final AppWidgetManager mAppWidgetManager;
     private final SharedPreferences mSharedPreferences;
+    private final Handler mHandler;
+    private final Runnable mTripRunnable;
 
     private Surface mSurface;
     private VirtualDisplay mVirtualDisplay;
@@ -70,8 +90,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private int mLastScrollY = -1;
     private int mPointerX;
     private int mPointerY;
-    private int mSpeed = -1;
+    private float mSpeed = 0;
+    private Location mLocation = null;
     private boolean mIsInPanMode = false;
+    private boolean mIsNavigating = false;
 
     protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
@@ -109,6 +131,25 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
         mAppWidgetHost = AAWidgetApplication.getAppWidgetHost();
         mAppWidgetManager = AAWidgetApplication.getAppWidgetManager();
+
+        mNavigationManager = carContext.getCarService( NavigationManager.class );
+        mNavigationManager.setNavigationManagerCallback( new NavigationManagerCallback() {
+            @Override
+            public void onStopNavigation() {
+                stopNavigation();
+            }
+        } );
+
+        mHandler = new Handler( Looper.getMainLooper() );
+        mTripRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if ( mIsNavigating ) {
+                    updateTrip();
+                    mHandler.postDelayed( this, 250 );
+                }
+            }
+        };
 
         mCarContext.getCarService( AppManager.class ).setSurfaceCallback( this );
         getLifecycle().addObserver( this );
@@ -240,7 +281,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             return;
         }
 
-        if ( mSpeed != 0 ) {
+        if ( (int)mSpeed != 0 ) {
             CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
             return;
         }
@@ -263,7 +304,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         }
 
         if ( mIsInPanMode ) {
-            if ( mSpeed != 0 ) {
+            if ( (int)mSpeed != 0 ) {
                 CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
                 return;
             }
@@ -277,7 +318,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             mPointerImageView.setLayoutParams( layoutParams );
         }
         else {
-            if ( mSpeed != 0 ) {
+            if ( (int)mSpeed != 0 ) {
                 return;
             }
 
@@ -304,7 +345,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int scrollY = mPointerY;
         long scrollTime;
 
-        if ( mSpeed != 0 ) {
+        if ( (int)mSpeed != 0 ) {
             CarToast.makeText( mCarContext, R.string.touch_operations_are_disabled, CarToast.LENGTH_LONG ).show();
             return;
         }
@@ -335,6 +376,14 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         NavigationTemplate.Builder builder = new NavigationTemplate.Builder();
 
         builder.setActionStrip( new ActionStrip.Builder()
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
+                        .setOnClickListener( this::startNavigation )
+                        .build() )
+                .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_stop ) ).build() )
+                        .setOnClickListener( this::stopNavigation )
+                        .build() )
                 .addAction( new Action.Builder()
                         .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, iconId ) ).build() )
                         .build() )
@@ -379,18 +428,31 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         CarValue< Float > speed = data.getDisplaySpeedMetersPerSecond();
 
         if ( speed.getStatus() == CarValue.STATUS_SUCCESS && speed.getValue() != null ) {
-            mSpeed = speed.getValue().intValue();
+            mSpeed = speed.getValue();
         }
         else {
-            mSpeed = -1;
+            mSpeed = 0;
+        }
+    };
+
+    private final OnCarDataAvailableListener< CarHardwareLocation > mCarLocationListener = data -> {
+        CarValue< Location > location = data.getLocation();
+
+        if ( location.getStatus() == CarValue.STATUS_SUCCESS && location.getValue() != null ) {
+            mLocation = location.getValue();
+        }
+        else {
+            mLocation = null;
         }
     };
 
     @Override
     public void onResume( @NonNull LifecycleOwner owner ) {
         CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
+        CarSensors carSensors = mCarContext.getCarService( CarHardwareManager.class ).getCarSensors();
         try {
             carInfo.addSpeedListener( mCarContext.getMainExecutor(), mSpeedListener );
+            carSensors.addCarHardwareLocationListener( CarSensors.UPDATE_RATE_NORMAL, mCarContext.getMainExecutor(), mCarLocationListener );
         }
         catch ( SecurityException ignored ) {
         }
@@ -399,8 +461,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @Override
     public void onPause( @NonNull LifecycleOwner owner ) {
         CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
+        CarSensors carSensors = mCarContext.getCarService( CarHardwareManager.class ).getCarSensors();
         try {
             carInfo.removeSpeedListener( mSpeedListener );
+            carSensors.removeCarHardwareLocationListener( mCarLocationListener );
         }
         catch ( SecurityException ignored ) {
         }
@@ -416,5 +480,62 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     public void onStop( @NonNull LifecycleOwner owner ) {
         DefaultLifecycleObserver.super.onStop( owner );
         // mAppWidgetHost.stopListening();
+    }
+
+    public void startNavigation() {
+        if ( !mIsNavigating ) {
+            mNavigationManager.navigationStarted();
+            mHandler.post( mTripRunnable );
+            mIsNavigating = true;
+        }
+    }
+
+    public void stopNavigation() {
+        if ( mIsNavigating ) {
+            mIsNavigating = false;
+            mHandler.removeCallbacks( mTripRunnable );
+            mNavigationManager.navigationEnded();
+        }
+    }
+
+    public void updateTrip() {
+        if ( !mIsNavigating ) return;
+
+        Maneuver maneuver = new Maneuver.Builder( Maneuver.TYPE_DEPART ).build();
+
+        Step step = new Step.Builder( "GPS Speed" )
+                .setManeuver( maneuver )
+                .build();
+
+        Destination destination = new Destination.Builder()
+                .setName( "GPS Speed" )
+                .build();
+
+        Distance dist;
+
+        if ( mLocation != null && mLocation.hasSpeed() ) {
+            dist = Distance.create( mLocation.getSpeed() * 3.6f, Distance.UNIT_KILOMETERS_P1 );
+        }
+        else {
+            dist = Distance.create( Math.abs( mSpeed ) * 3.6f, Distance.UNIT_KILOMETERS_P1 );
+        }
+
+        long currentTimeMillis = System.currentTimeMillis();
+        DateTimeWithZone arrivalTime = DateTimeWithZone.create(
+                currentTimeMillis,
+                (int)TimeUnit.MILLISECONDS.toSeconds( TimeZone.getDefault().getOffset( currentTimeMillis ) ),
+                TimeZone.getDefault().getID()
+        );
+
+        TravelEstimate estimate = new TravelEstimate.Builder( dist, arrivalTime )
+                .build();
+
+        Trip trip = new Trip.Builder()
+                .addDestination( destination, estimate )
+                .addStep( step, estimate )
+                .setLoading( false )
+                .build();
+
+        mNavigationManager.updateTrip( trip );
     }
 }
