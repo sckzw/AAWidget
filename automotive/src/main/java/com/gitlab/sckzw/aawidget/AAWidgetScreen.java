@@ -1,13 +1,12 @@
 package com.gitlab.sckzw.aawidget;
 
 import android.app.Presentation;
-import android.appwidget.AppWidgetHost;
-import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -52,14 +51,14 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private final Class< ? extends CarAppService > mCarAppServiceClass;
     private final Context mAppContext;
     private final CarContext mCarContext;
-    private final AppWidgetHost mAppWidgetHost;
+    private final AAWidgetHost mAppWidgetHost;
     private final AppWidgetManager mAppWidgetManager;
     private final SharedPreferences mSharedPreferences;
 
     private Surface mSurface;
     private VirtualDisplay mVirtualDisplay;
     private Presentation mPresentation;
-    private AppWidgetHostView mAppWidgetView;
+    private AAWidgetHostView mAppWidgetView;
     private ImageView mPointerImageView;
 
     private Rect mVisibleArea = new Rect();
@@ -146,8 +145,16 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         }
 
         if ( appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
+            Configuration carConfig = mCarContext.getResources().getConfiguration();
+            Configuration newConfig = new Configuration( carConfig );
+
+            newConfig.fontScale = 1.5f;
+            newConfig.densityDpi = 160;
+
+            Context carContext = mCarContext.createConfigurationContext( newConfig );
+
             AppWidgetProviderInfo appWidgetInfo = mAppWidgetManager.getAppWidgetInfo( appWidgetId );
-            mAppWidgetView = mAppWidgetHost.createView( mAppContext, appWidgetId, appWidgetInfo );
+            mAppWidgetView = (AAWidgetHostView)mAppWidgetHost.createView( carContext, appWidgetId, appWidgetInfo );
 
             layoutWidget.addView( mAppWidgetView );
         }

@@ -6,14 +6,14 @@ import android.appwidget.AppWidgetManager;
 
 public class AAWidgetApplication extends Application {
     private static AppWidgetManager mAppWidgetManager;
-    private static AppWidgetHost mAppWidgetHost;
+    private static AAWidgetHost mAppWidgetHost;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         mAppWidgetManager = AppWidgetManager.getInstance( getApplicationContext() );
-        mAppWidgetHost = new AppWidgetHost( getApplicationContext(), 0 );
+        mAppWidgetHost = new AAWidgetHost( getApplicationContext(), 0 );
         mAppWidgetHost.startListening();
     }
 
@@ -29,7 +29,7 @@ public class AAWidgetApplication extends Application {
         return mAppWidgetManager;
     }
 
-    public static AppWidgetHost getAppWidgetHost() {
+    public static AAWidgetHost getAppWidgetHost() {
         return mAppWidgetHost;
     }
 }
