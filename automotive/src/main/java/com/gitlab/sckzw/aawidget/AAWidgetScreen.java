@@ -8,7 +8,6 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -147,7 +146,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
         if ( appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID ) {
             AppWidgetProviderInfo appWidgetInfo = mAppWidgetManager.getAppWidgetInfo( appWidgetId );
-            mAppWidgetView = mAppWidgetHost.createView( mAppContext, appWidgetId, appWidgetInfo );
+            mAppWidgetView = mAppWidgetHost.createView( mCarContext, appWidgetId, appWidgetInfo );
 
             layoutWidget.addView( mAppWidgetView );
         }
@@ -156,8 +155,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         mPointerImageView.setImageResource( R.drawable.ic_pointer );
         mPointerImageView.setVisibility( View.INVISIBLE );
 
-        float density = Resources.getSystem().getDisplayMetrics().density;
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams( (int)( 12 * density ), (int)( 12 * density ) );
+        float density = mCarContext.getResources().getDisplayMetrics().density;
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams( (int)( 24 * density ), (int)( 24 * density ) );
         layoutParams.leftMargin = mPointerX = mSurfaceWidth / 2;
         layoutParams.topMargin = mPointerY = mSurfaceHeight / 2;
         layoutWidget.addView( mPointerImageView, layoutParams );
@@ -183,7 +182,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         int width = visibleArea.width();
         int height = visibleArea.height();
 
-        float density = Resources.getSystem().getDisplayMetrics().density;
+        float density = mCarContext.getResources().getDisplayMetrics().density;
         width = (int)( width / density );
         height = (int)( height / density );
 
@@ -243,8 +242,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                 return;
             }
 
-            mPointerX += (int)distanceX / 2;
-            mPointerY += (int)distanceY / 2;
+            mPointerX += (int)distanceX / 3;
+            mPointerY += (int)distanceY / 3;
 
             FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams)mPointerImageView.getLayoutParams();
             layoutParams.leftMargin = mPointerX;
