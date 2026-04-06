@@ -299,8 +299,8 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         @Override
         public void run() {
             if ( mIsNavigating ) {
-                updateTrip();
-                mHandler.postDelayed( this, 250 );
+                updateTripTest();
+                mHandler.postDelayed( this, 1000 );
             }
         }
     };
@@ -529,10 +529,6 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                 .addAction( new Action.Builder()
                         .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
                         .setOnClickListener( this::startNavigation )
-                        .build() )
-                .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_click ) ).build() )
-                        .setOnClickListener( this::updateTripType )
                         .build() )
                 .addAction( new Action.Builder()
                         .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_stop ) ).build() )
