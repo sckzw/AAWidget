@@ -8,6 +8,7 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -364,30 +365,31 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @NonNull
     @Override
     public Template onGetTemplate() {
+        NavigationTemplate.Builder builder = new NavigationTemplate.Builder();
+        ActionStrip.Builder actionStripBuilder = new ActionStrip.Builder();
         int iconId;
 
         if ( mCarAppServiceClass.isAssignableFrom( AAWidgetCarAppService.class ) ) {
             iconId = R.drawable.ic_widgets;
+
+            actionStripBuilder.addAction( new Action.Builder()
+                    .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
+                    .setOnClickListener( this::startNavigation )
+                    .build() );
+            actionStripBuilder.addAction( new Action.Builder()
+                    .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_stop ) ).build() )
+                    .setOnClickListener( this::stopNavigation )
+                    .build() );
         }
         else {
             iconId = R.drawable.ic_wallpaper;
         }
 
-        NavigationTemplate.Builder builder = new NavigationTemplate.Builder();
-
-        builder.setActionStrip( new ActionStrip.Builder()
-                .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
-                        .setOnClickListener( this::startNavigation )
-                        .build() )
-                .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_stop ) ).build() )
-                        .setOnClickListener( this::stopNavigation )
-                        .build() )
-                .addAction( new Action.Builder()
-                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, iconId ) ).build() )
-                        .build() )
+        actionStripBuilder.addAction( new Action.Builder()
+                .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, iconId ) ).build() )
                 .build() );
+
+        builder.setActionStrip( actionStripBuilder.build() );
 
         builder.setMapActionStrip( new ActionStrip.Builder()
                 .addAction( new Action.Builder( Action.PAN )
@@ -448,25 +450,35 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
     @Override
     public void onResume( @NonNull LifecycleOwner owner ) {
-        CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
-        CarSensors carSensors = mCarContext.getCarService( CarHardwareManager.class ).getCarSensors();
-        try {
+        CarHardwareManager carHardwareManager = mCarContext.getCarService( CarHardwareManager.class );
+        CarInfo carInfo = carHardwareManager.getCarInfo();
+        CarSensors carSensors = carHardwareManager.getCarSensors();
+
+        if ( mCarContext.checkSelfPermission( "com.google.android.gms.permission.CAR_SPEED" ) == PackageManager.PERMISSION_GRANTED ) {
             carInfo.addSpeedListener( mCarContext.getMainExecutor(), mSpeedListener );
+        }
+        if ( mCarContext.checkSelfPermission( android.Manifest.permission.ACCESS_FINE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
             carSensors.addCarHardwareLocationListener( CarSensors.UPDATE_RATE_NORMAL, mCarContext.getMainExecutor(), mCarLocationListener );
         }
-        catch ( SecurityException ignored ) {
+
+        if ( mIsNavigating ) {
+            mNavigationManager.navigationStarted();
+            mHandler.post( mTripRunnable );
         }
     }
 
     @Override
     public void onPause( @NonNull LifecycleOwner owner ) {
-        CarInfo carInfo = mCarContext.getCarService( CarHardwareManager.class ).getCarInfo();
-        CarSensors carSensors = mCarContext.getCarService( CarHardwareManager.class ).getCarSensors();
-        try {
-            carInfo.removeSpeedListener( mSpeedListener );
-            carSensors.removeCarHardwareLocationListener( mCarLocationListener );
-        }
-        catch ( SecurityException ignored ) {
+        CarHardwareManager carHardwareManager = mCarContext.getCarService( CarHardwareManager.class );
+        CarInfo carInfo = carHardwareManager.getCarInfo();
+        CarSensors carSensors = carHardwareManager.getCarSensors();
+
+        carInfo.removeSpeedListener( mSpeedListener );
+        carSensors.removeCarHardwareLocationListener( mCarLocationListener );
+
+        if ( mIsNavigating ) {
+            mHandler.removeCallbacks( mTripRunnable );
+            mNavigationManager.navigationEnded();
         }
     }
 
