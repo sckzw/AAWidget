@@ -23,6 +23,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
 
@@ -41,6 +42,7 @@ public class WidgetListActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
+        EdgeToEdge.enable( this );
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_widget_list );
 
