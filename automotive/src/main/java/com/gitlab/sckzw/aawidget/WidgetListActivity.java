@@ -10,8 +10,6 @@ import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +37,7 @@ public class WidgetListActivity extends AppCompatActivity {
     private final WidgetListAdapter mWidgetListAdapter = new WidgetListAdapter();
     private PackageManager mPackageManager;
     private AppWidgetManager mAppWidgetManager;
+    private ExecutorService mExecutorService;
 
     @Override
     protected void onCreate( Bundle savedInstanceState ) {
@@ -46,11 +45,32 @@ public class WidgetListActivity extends AppCompatActivity {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_widget_list );
 
+        ListView listView = findViewById( R.id.widget_list_view );
+        listView.setOnItemClickListener( new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick( AdapterView< ? > adapterView, View view, int i, long l ) {
+                WidgetInfo widgetInfo = mWidgetInfoList.get( i );
+
+                Intent intent = new Intent();
+                intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, widgetInfo.providerInfo.provider );
+                intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE, widgetInfo.providerInfo.getProfile() );
+
+                setResult( RESULT_OK, intent );
+                finish();
+            }
+        } );
+
         mPackageManager = getApplicationContext().getPackageManager();
         mAppWidgetManager = AppWidgetManager.getInstance( getApplicationContext() );
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit( new LoadAppListRunnable() );
+        mExecutorService = Executors.newSingleThreadExecutor();
+        mExecutorService.submit( new LoadAppListRunnable() );
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mExecutorService.shutdownNow();
     }
 
     private static class WidgetInfo {
@@ -238,6 +258,10 @@ public class WidgetListActivity extends AppCompatActivity {
                 ) );
 
                 progressBar.setProgress( 100 * ( ++widgetCnt ) / widgetNum );
+
+                if ( Thread.currentThread().isInterrupted() ) {
+                    return;
+                }
             }
 
             mWidgetInfoList.sort( new Comparator< WidgetInfo >() {
@@ -247,27 +271,12 @@ public class WidgetListActivity extends AppCompatActivity {
                 }
             } );
 
-            progressBar.setVisibility( android.widget.ProgressBar.INVISIBLE );
-
-            ListView listView = findViewById( R.id.widget_list_view );
-            listView.setOnItemClickListener( new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick( AdapterView< ? > adapterView, View view, int i, long l ) {
-                    WidgetInfo widgetInfo = mWidgetInfoList.get( i );
-
-                    Intent intent = new Intent();
-                    intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, widgetInfo.providerInfo.provider );
-                    intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER_PROFILE, widgetInfo.providerInfo.getProfile() );
-
-                    setResult( RESULT_OK, intent );
-                    finish();
-                }
-            } );
-
-            Handler handler = new Handler( Looper.getMainLooper() );
-            handler.post( new Runnable() {
+            runOnUiThread( new Runnable() {
                 @Override
                 public void run() {
+                    ProgressBar progressBar = findViewById( R.id.progress_bar );
+                    progressBar.setVisibility( android.widget.ProgressBar.INVISIBLE );
+
                     ListView listView = findViewById( R.id.widget_list_view );
                     listView.setAdapter( mWidgetListAdapter );
                 }
