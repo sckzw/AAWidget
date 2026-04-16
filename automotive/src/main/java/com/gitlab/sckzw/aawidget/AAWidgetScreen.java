@@ -236,8 +236,27 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     @Override
     public void onSurfaceDestroyed( @NonNull SurfaceContainer surfaceContainer ) {
         mSurface = null;
-        mPresentation.dismiss();
-        mVirtualDisplay.release();
+
+        if ( mPresentation != null ) {
+            mPresentation.dismiss();
+            mPresentation = null;
+        }
+        if ( mVirtualDisplay != null ) {
+            mVirtualDisplay.release();
+            mVirtualDisplay = null;
+        }
+    }
+
+    @Override
+    public void onDestroy( @NonNull LifecycleOwner owner ) {
+        if ( mPresentation != null ) {
+            mPresentation.dismiss();
+            mPresentation = null;
+        }
+        if ( mVirtualDisplay != null ) {
+            mVirtualDisplay.release();
+            mVirtualDisplay = null;
+        }
     }
 
     @Override
