@@ -21,4 +21,6 @@
     <string name="pref_density_dpi_summary">ウィジェットビュー密度を入力する</string>
     <string name="pref_font_scale_title">ウィジェットフォントスケール</string>
     <string name="pref_font_scale_summary">ウィジェットフォントスケールを入力する</string>
+    <string name="pref_apply_settings_title">設定を適用</string>
+    <string name="pref_apply_settings_summary">設定をAndroid Autoのスクリーンへ適用する</string>
 </resources>

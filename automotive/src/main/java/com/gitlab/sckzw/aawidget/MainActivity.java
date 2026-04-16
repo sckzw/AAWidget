@@ -170,6 +170,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                 return true;
             }
+            if ( preference.hasKey() && preference.getKey().equals( "apply_settings" ) ) {
+                Intent intent = new Intent( "com.gitlab.sckzw.aawidget.INTENT_ACTION_RESET_SCREEN" );
+                intent.setPackage( "com.gitlab.sckzw.aawidget" );
+                requireContext().sendBroadcast( intent );
+
+                return true;
+            }
 
             return super.onPreferenceTreeClick( preference );
         }

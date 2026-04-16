@@ -1,6 +1,9 @@
 package com.gitlab.sckzw.aawidget;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 
 import androidx.annotation.NonNull;
@@ -9,7 +12,9 @@ import androidx.car.app.CarAppService;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
+import androidx.car.app.ScreenManager;
 import androidx.car.app.Session;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
@@ -45,11 +50,16 @@ public class AAWidgetSession extends Session implements DefaultLifecycleObserver
 
     @Override
     public void onCreate( @NonNull LifecycleOwner owner ) {
+        IntentFilter filter = new IntentFilter( "com.gitlab.sckzw.aawidget.INTENT_ACTION_RESET_SCREEN" );
+        ContextCompat.registerReceiver( getCarContext(), mResetScreenBroadcastReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED );
+
         syncDarkMode();
     }
 
     @Override
     public void onDestroy( @NonNull LifecycleOwner owner ) {
+        getCarContext().unregisterReceiver( mResetScreenBroadcastReceiver );
+
         AppCompatDelegate.setDefaultNightMode( AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM );
     }
 
@@ -61,4 +71,13 @@ public class AAWidgetSession extends Session implements DefaultLifecycleObserver
             AppCompatDelegate.setDefaultNightMode( AppCompatDelegate.MODE_NIGHT_NO );
         }
     }
+
+    private final BroadcastReceiver mResetScreenBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive( Context context, Intent intent ) {
+            ScreenManager screenManager = getCarContext().getCarService( ScreenManager.class );
+            screenManager.pop();
+            screenManager.push( new AAWidgetScreen( getCarContext(), mCarAppServiceClass ) );
+        }
+    };
 }
