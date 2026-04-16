@@ -28,11 +28,6 @@
             app:useSimpleSummaryProvider="true"
             app:iconSpaceReserved="false" />
         <Preference
-            app:key="apply_settings"
-            app:title="@string/pref_apply_settings_title"
-            app:summary="@string/pref_apply_settings_summary"
-            app:iconSpaceReserved="false" />
-        <Preference
             app:key="permission"
             app:title="@string/pref_permission_title"
             app:summary="@string/pref_permission_summary"

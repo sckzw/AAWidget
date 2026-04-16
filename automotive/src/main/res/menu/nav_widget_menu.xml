@@ -10,4 +10,8 @@
         android:id="@+id/nav_widget_add"
         android:icon="@drawable/ic_widgets"
         android:title="@string/add_widget" />
+    <item
+        android:id="@+id/nav_apply_settings"
+        android:icon="@drawable/ic_apply_settings"
+        android:title="@string/apply_settings" />
 </menu>

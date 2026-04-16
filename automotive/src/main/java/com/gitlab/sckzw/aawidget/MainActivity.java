@@ -124,6 +124,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
 
                     return true;
                 }
+                if ( item.getItemId() == R.id.nav_apply_settings ) {
+                    Intent intent = new Intent( "com.gitlab.sckzw.aawidget.INTENT_ACTION_APPLY_SETTINGS" );
+                    intent.setPackage( "com.gitlab.sckzw.aawidget" );
+                    sendBroadcast( intent );
+
+                    return true;
+                }
 
                 return false;
             }
@@ -167,13 +174,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             if ( preference.hasKey() && preference.getKey().equals( "permission" ) ) {
                 startActivity( new Intent( Settings.ACTION_APPLICATION_DETAILS_SETTINGS )
                         .setData( Uri.parse( "package:com.gitlab.sckzw.aawidget" ) ) );
-
-                return true;
-            }
-            if ( preference.hasKey() && preference.getKey().equals( "apply_settings" ) ) {
-                Intent intent = new Intent( "com.gitlab.sckzw.aawidget.INTENT_ACTION_RESET_SCREEN" );
-                intent.setPackage( "com.gitlab.sckzw.aawidget" );
-                requireContext().sendBroadcast( intent );
 
                 return true;
             }

@@ -50,15 +50,15 @@ public class AAWidgetSession extends Session implements DefaultLifecycleObserver
 
     @Override
     public void onCreate( @NonNull LifecycleOwner owner ) {
-        IntentFilter filter = new IntentFilter( "com.gitlab.sckzw.aawidget.INTENT_ACTION_RESET_SCREEN" );
-        ContextCompat.registerReceiver( getCarContext(), mResetScreenBroadcastReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED );
+        IntentFilter filter = new IntentFilter( "com.gitlab.sckzw.aawidget.INTENT_ACTION_APPLY_SETTINGS" );
+        ContextCompat.registerReceiver( getCarContext(), mApplySettingsBroadcastReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED );
 
         syncDarkMode();
     }
 
     @Override
     public void onDestroy( @NonNull LifecycleOwner owner ) {
-        getCarContext().unregisterReceiver( mResetScreenBroadcastReceiver );
+        getCarContext().unregisterReceiver( mApplySettingsBroadcastReceiver );
 
         AppCompatDelegate.setDefaultNightMode( AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM );
     }
@@ -72,7 +72,7 @@ public class AAWidgetSession extends Session implements DefaultLifecycleObserver
         }
     }
 
-    private final BroadcastReceiver mResetScreenBroadcastReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver mApplySettingsBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive( Context context, Intent intent ) {
             ScreenManager screenManager = getCarContext().getCarService( ScreenManager.class );
