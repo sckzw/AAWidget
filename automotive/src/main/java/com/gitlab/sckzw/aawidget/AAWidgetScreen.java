@@ -140,7 +140,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         }
     }
 
-    private int mManeuverType = 0;
+    private int mManeuverType = Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE  - 1;
     private int mRoundaboutExitAngle = 0;
     private int mRoundaboutExitNumber = 0;
     private int mRoadNumber = 0;
@@ -183,7 +183,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                     .setImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_wallpaper ) ).build() )
                     .build();
 
-            Distance dist = Distance.create( mManeuverType + 1, Distance.UNIT_METERS );
+            Distance dist = Distance.create( mRoundaboutExitAngle + 1, Distance.UNIT_METERS );
 
             long currentTimeMillis = System.currentTimeMillis();
             long remainingSecondsInMillis = TimeUnit.SECONDS.toMillis( mRemainingSeconds );
@@ -215,10 +215,22 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             e.printStackTrace();
         }
 
-        mManeuverType = ( mManeuverType + 1 ) % 50;
+        if ( mRoundaboutExitAngle == 359 ) {
+            if ( mManeuverType == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE  - 1 ) {
+                mManeuverType = Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW_WITH_ANGLE - 1;
+            }
+            else {
+                mManeuverType = Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE  - 1;
+            }
+
+            mRoundaboutExitAngle = 0;
+        }
+        else {
+            mRoundaboutExitAngle ++;
+        }
+
         if ( mManeuverType == 29 ) mManeuverType = 31;
         if ( mManeuverType == 30 ) mManeuverType = 31;
-        mRoundaboutExitAngle = ( mRoundaboutExitAngle + 1 ) % 360;
         mRoundaboutExitNumber = ( mRoundaboutExitNumber + 1 ) % 24;
         mRoadNumber = mRoadNumber + 1;
         mDistance = mDistance + 1;
