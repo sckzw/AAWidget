@@ -183,7 +183,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                     .setImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_wallpaper ) ).build() )
                     .build();
 
-            Distance dist = Distance.create( mDistance, mDistanceUnit + 1 );
+            Distance dist = Distance.create( mManeuverType + 1, Distance.UNIT_METERS );
 
             long currentTimeMillis = System.currentTimeMillis();
             long remainingSecondsInMillis = TimeUnit.SECONDS.toMillis( mRemainingSeconds );
