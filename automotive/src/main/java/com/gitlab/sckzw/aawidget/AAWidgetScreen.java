@@ -53,9 +53,12 @@ import androidx.car.app.model.Template;
 import androidx.car.app.navigation.NavigationManager;
 import androidx.car.app.navigation.NavigationManagerCallback;
 import androidx.car.app.navigation.model.Destination;
+import androidx.car.app.navigation.model.Lane;
+import androidx.car.app.navigation.model.LaneDirection;
 import androidx.car.app.navigation.model.Maneuver;
 import androidx.car.app.navigation.model.NavigationTemplate;
 import androidx.car.app.navigation.model.PanModeListener;
+import androidx.car.app.navigation.model.RoutingInfo;
 import androidx.car.app.navigation.model.Step;
 import androidx.car.app.navigation.model.TravelEstimate;
 import androidx.car.app.navigation.model.Trip;
@@ -65,6 +68,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.preference.PreferenceManager;
 
 import java.util.Calendar;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLifecycleObserver {
@@ -140,18 +144,20 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
         }
     }
 
-    private int mManeuverType = Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE  - 1;
+    private int mManeuverType = Maneuver.TYPE_TURN_NORMAL_LEFT - 1;
     private int mRoundaboutExitAngle = 0;
     private int mRoundaboutExitNumber = 0;
     private int mRoadNumber = 0;
     private double mDistance = 0.1;
     private int mDistanceUnit = 0;
-    private int mRemainingSeconds = 0;
+    private int mRemainingSeconds = 60 * 5;
+    private int mLaneCount = 2;
+    RoutingInfo mRoutingInfo = null;
 
     public void updateTripTest() {
         if ( !mIsNavigating ) return;
 
-        String roadName = "Street #" + mRoadNumber;
+        String roadName = "Street #0"; // + mRoadNumber;
 
         try {
             Maneuver.Builder maneuverBuilder = new Maneuver.Builder( mManeuverType + 1 );
@@ -172,18 +178,47 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                     .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_pan ) ).build() )
                     .build();
 
-            Step step = new Step.Builder( roadName )
+            Step.Builder stepBuilder = new Step.Builder( "Cue name" )
                     .setManeuver( maneuver )
                     .setRoad( roadName )
+                    .setLanesImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_pointer ) ).build() );
+
+            LaneDirection direction1 = LaneDirection.create( LaneDirection.SHAPE_NORMAL_LEFT, true );
+            LaneDirection direction2 = LaneDirection.create( LaneDirection.SHAPE_STRAIGHT, false );
+
+            Lane lane1 = new Lane.Builder()
+                    .addDirection( direction1 )
+                    //.addDirection( direction2 )
                     .build();
+
+            LaneDirection direction3 = LaneDirection.create( LaneDirection.SHAPE_NORMAL_RIGHT, false );
+            Lane lane2 = new Lane.Builder()
+                    .addDirection( direction3 )
+                    .build();
+
+            stepBuilder.addLane( lane1 );
+            stepBuilder.addLane( lane2 );
+
+            //for ( int i = 0; i <= mLaneCount; i ++ ) {
+            /*
+            stepBuilder.addLane( new Lane.Builder()
+                    .addDirection( LaneDirection.create( LaneDirection.SHAPE_NORMAL_LEFT, true ) )
+                    .addDirection( LaneDirection.create( LaneDirection.SHAPE_STRAIGHT, false ) )
+                    .build() );
+            stepBuilder.addLane( new Lane.Builder().addDirection( LaneDirection.create( LaneDirection.SHAPE_NORMAL_RIGHT, false ) ).build() );
+             */
+            //}
+
+            Step step = stepBuilder.build();
+            List< Lane > lanes = step.getLanes();
 
             Destination destination = new Destination.Builder()
-                    .setAddress( "Address" )
-                    .setName( "Destination" )
-                    .setImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_wallpaper ) ).build() )
+                    .setName( "自宅" )
+                    .setAddress( "長野県塩尻市宗賀73-420" )
+                    //.setImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_wallpaper ) ).build() )
                     .build();
 
-            Distance dist = Distance.create( mRoundaboutExitAngle + 1, Distance.UNIT_METERS );
+            Distance dstDist = Distance.create( 10, Distance.UNIT_KILOMETERS );
 
             long currentTimeMillis = System.currentTimeMillis();
             long remainingSecondsInMillis = TimeUnit.SECONDS.toMillis( mRemainingSeconds );
@@ -195,42 +230,52 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                     TimeZone.getDefault().getID()
             );
 
-            TravelEstimate estimate = new TravelEstimate.Builder( dist, arrivalTime )
+            TravelEstimate dstEstimate = new TravelEstimate.Builder( dstDist, arrivalTime )
                     .setRemainingTimeSeconds( mRemainingSeconds )
-                    .setRemainingTimeColor( CarColor.RED )
-                    .setRemainingDistanceColor( CarColor.BLUE )
-                    .setTripIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
-                    .setTripText( CarText.create( "TripText" ) )
+                    //.setRemainingTimeColor( CarColor.RED )
+                    //.setRemainingDistanceColor( CarColor.BLUE )
+                    //.setTripIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
+                    //.setTripText( CarText.create( "TripText" ) )
+                    .build();
+
+            TravelEstimate stepEstimate = new TravelEstimate.Builder( Distance.create( 100, Distance.UNIT_METERS ), arrivalTime )
+                    .setRemainingTimeSeconds( 60 )
+                    //.setRemainingTimeColor( CarColor.RED )
+                    //.setRemainingDistanceColor( CarColor.BLUE )
+                    //.setTripIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
+                    //.setTripText( CarText.create( "TripText" ) )
                     .build();
 
             Trip trip = new Trip.Builder()
-                    .addDestination( destination, estimate )
-                    .addStep( step, estimate )
-                    .setLoading( false )
-                    .setCurrentRoad( "CurrentRoad" )
+                    .addDestination( destination, dstEstimate )
+                    //.setLoading( false )
+                    //.setCurrentRoad( "CurrentRoad" )
+                    .addStep( step, stepEstimate )
+                    //.setLoading( false )
+                    .setCurrentRoad( roadName )
                     .build();
 
+            List< Step > steps = trip.getSteps();
+
             mNavigationManager.updateTrip( trip );
+
+            mRoutingInfo = new RoutingInfo.Builder()
+                    .setCurrentStep( step, Distance.create(200, Distance.UNIT_METERS))
+                    .setNextStep( step )
+                    .setLoading( false )
+                    .setJunctionImage( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_scroll_up ) ).build() )
+                    .build();
+
+            //invalidate();
         } catch ( Exception e ) {
             e.printStackTrace();
         }
 
-        if ( mRoundaboutExitAngle == 359 ) {
-            if ( mManeuverType == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE  - 1 ) {
-                mManeuverType = Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW_WITH_ANGLE - 1;
-            }
-            else {
-                mManeuverType = Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CW_WITH_ANGLE  - 1;
-            }
-
-            mRoundaboutExitAngle = 0;
-        }
-        else {
-            mRoundaboutExitAngle ++;
-        }
-
+        //mLaneCount = ( mLaneCount + 1 ) % 10;
+        // mManeuverType = ( mManeuverType + 1 ) % 50;
         if ( mManeuverType == 29 ) mManeuverType = 31;
         if ( mManeuverType == 30 ) mManeuverType = 31;
+        mRoundaboutExitAngle = ( mRoundaboutExitAngle + 1 ) % 360;
         mRoundaboutExitNumber = ( mRoundaboutExitNumber + 1 ) % 24;
         mRoadNumber = mRoadNumber + 1;
         mDistance = mDistance + 1;
@@ -547,6 +592,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                         .setOnClickListener( this::stopNavigation )
                         .build() )
                 .addAction( new Action.Builder()
+                        .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_click ) ).build() )
+                        .setOnClickListener( this::invalidate )
+                        .build() )
+                .addAction( new Action.Builder()
                         .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, iconId ) ).build() )
                         .build() )
                 .build() );
@@ -582,6 +631,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                 }
             }
         } );
+
+        if ( mRoutingInfo != null ) {
+            builder.setNavigationInfo( mRoutingInfo );
+        }
 
         return builder.build();
     }
