@@ -127,9 +127,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             }
         } );
 
-        String[] permissions = { "com.google.android.gms.permission.CAR_SPEED" };
-        if ( ContextCompat.checkSelfPermission( this, permissions[0] ) != PackageManager.PERMISSION_GRANTED ) {
-            ActivityCompat.requestPermissions( this, permissions, 0 );
+        String[] permissions = {
+                "com.google.android.gms.permission.CAR_SPEED",
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+        };
+        for ( String permission: permissions ) {
+            if ( ContextCompat.checkSelfPermission( this, permission ) != PackageManager.PERMISSION_GRANTED ) {
+                ActivityCompat.requestPermissions( this, permissions, 0 );
+                break;
+            }
         }
     }
 
