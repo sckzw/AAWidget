@@ -15,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -23,6 +25,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.content.res.ResourcesCompat;
 
 import java.util.ArrayList;
@@ -34,6 +37,7 @@ import java.util.concurrent.Executors;
 
 public class WidgetListActivity extends AppCompatActivity {
     private final List< WidgetInfo > mWidgetInfoList = new ArrayList<>();
+    private List< WidgetInfo > mFilterWidgetInfoList = new ArrayList<>();
     private final WidgetListAdapter mWidgetListAdapter = new WidgetListAdapter();
     private PackageManager mPackageManager;
     private AppWidgetManager mAppWidgetManager;
@@ -49,7 +53,7 @@ public class WidgetListActivity extends AppCompatActivity {
         listView.setOnItemClickListener( new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick( AdapterView< ? > adapterView, View view, int i, long l ) {
-                WidgetInfo widgetInfo = mWidgetInfoList.get( i );
+                WidgetInfo widgetInfo = mFilterWidgetInfoList.get( i );
 
                 Intent intent = new Intent();
                 intent.putExtra( AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, widgetInfo.providerInfo.provider );
@@ -57,6 +61,20 @@ public class WidgetListActivity extends AppCompatActivity {
 
                 setResult( RESULT_OK, intent );
                 finish();
+            }
+        } );
+
+        SearchView searchKeyword = findViewById( R.id.search_keyword );
+        searchKeyword.setOnQueryTextListener( new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit( String query ) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange( String newText ) {
+                mWidgetListAdapter.getFilter().filter( newText );
+                return true;
             }
         } );
 
@@ -91,15 +109,17 @@ public class WidgetListActivity extends AppCompatActivity {
         }
     }
 
-    private class WidgetListAdapter extends BaseAdapter {
+    private class WidgetListAdapter extends BaseAdapter implements Filterable {
+        private final WidgetListFilter widgetListFilter = new WidgetListFilter();
+
         @Override
         public int getCount() {
-            return mWidgetInfoList.size();
+            return mFilterWidgetInfoList.size();
         }
 
         @Override
         public Object getItem( int position ) {
-            return mWidgetInfoList.get( position );
+            return mFilterWidgetInfoList.get( position );
         }
 
         @Override
@@ -214,6 +234,46 @@ public class WidgetListActivity extends AppCompatActivity {
 
             return null;
         }
+
+        @Override
+        public Filter getFilter() {
+            return widgetListFilter;
+        }
+
+        private class WidgetListFilter extends Filter {
+            @Override
+            protected FilterResults performFiltering( CharSequence charSequence ) {
+                FilterResults filterResults = new FilterResults();
+
+                if ( charSequence == null || charSequence.length() == 0 ) {
+                    filterResults.values = mWidgetInfoList;
+                    filterResults.count = mWidgetInfoList.size();
+                }
+                else {
+                    String keyword = charSequence.toString().toLowerCase();
+                    List< WidgetInfo > filterItems = new ArrayList<>();
+
+                    for ( WidgetInfo item: mWidgetInfoList ) {
+                        if ( item.appName.toLowerCase().contains( keyword ) ||
+                                item.label.toLowerCase().contains( keyword ) ||
+                                item.description.toLowerCase().contains( keyword ) ) {
+                            filterItems.add( item );
+                        }
+                    }
+
+                    filterResults.values = filterItems;
+                    filterResults.count  = filterItems.size();
+                }
+
+                return filterResults;
+            }
+
+            @Override
+            protected void publishResults( CharSequence charSequence, FilterResults filterResults ) {
+                mFilterWidgetInfoList = (List< WidgetInfo >)filterResults.values;
+                notifyDataSetChanged();
+            }
+        }
     }
 
     private class LoadAppListRunnable implements Runnable {
@@ -270,6 +330,8 @@ public class WidgetListActivity extends AppCompatActivity {
                     return widgetInfo1.appName.compareTo( widgetInfo2.appName );
                 }
             } );
+
+            mFilterWidgetInfoList = mWidgetInfoList;
 
             runOnUiThread( new Runnable() {
                 @Override

@@ -21,4 +21,5 @@
     <string name="pref_font_scale_title">Widget font scale</string>
     <string name="pref_font_scale_summary">Enter widget font scale</string>
     <string name="apply_settings">Apply settings</string>
+    <string name="widget_search_hint">Search widgets</string>
 </resources>
