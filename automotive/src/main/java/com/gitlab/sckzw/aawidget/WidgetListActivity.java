@@ -255,6 +255,7 @@ public class WidgetListActivity extends AppCompatActivity {
 
                     for ( WidgetInfo item: mWidgetInfoList ) {
                         if ( item.appName.toLowerCase().contains( keyword ) ||
+                                item.pkgName.toLowerCase().contains( keyword ) ||
                                 item.label.toLowerCase().contains( keyword ) ||
                                 item.description.toLowerCase().contains( keyword ) ) {
                             filterItems.add( item );
