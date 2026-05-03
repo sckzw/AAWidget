@@ -63,6 +63,7 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.preference.PreferenceManager;
 
+import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLifecycleObserver {
@@ -76,6 +77,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private final SharedPreferences mSharedPreferences;
     private final Handler mHandler;
     private final Runnable mTripRunnable;
+    private final IcInfo[] mIcInfos;
 
     private Surface mSurface;
     private VirtualDisplay mVirtualDisplay;
@@ -95,6 +97,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     private Location mLocation = null;
     private boolean mIsInPanMode = false;
     private boolean mIsNavigating = false;
+    private int mIcInfoNo = 0;
 
     protected AAWidgetScreen( @NonNull CarContext carContext, Class< ? extends CarAppService > carAppServiceClass ) {
         super( carContext );
@@ -150,6 +153,15 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                     mHandler.postDelayed( this, 250 );
                 }
             }
+        };
+
+        mIcInfos = new IcInfo[] {
+                new IcInfo( IcType.GPS_SPEED, carContext.getString( R.string.ic_info_gps_speed ), Maneuver.TYPE_DEPART, Distance.UNIT_KILOMETERS_P1 ),
+                new IcInfo( IcType.CAR_SPEED, carContext.getString( R.string.ic_info_car_speed ), Maneuver.TYPE_DEPART, Distance.UNIT_KILOMETERS_P1 ),
+                new IcInfo( IcType.DATE_MONTH, carContext.getString( R.string.ic_info_month ), Maneuver.TYPE_DESTINATION, Distance.UNIT_METERS ),
+                new IcInfo( IcType.DATE_DAY, carContext.getString( R.string.ic_info_day ), Maneuver.TYPE_DESTINATION, Distance.UNIT_METERS ),
+                new IcInfo( IcType.TIME_HOUR, carContext.getString( R.string.ic_info_hour ), Maneuver.TYPE_FORK_LEFT, Distance.UNIT_METERS ),
+                new IcInfo( IcType.TIME_MINUTE, carContext.getString( R.string.ic_info_minute ), Maneuver.TYPE_FORK_LEFT, Distance.UNIT_METERS )
         };
 
         mCarContext.getCarService( AppManager.class ).setSurfaceCallback( this );
@@ -394,6 +406,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             actionStripBuilder.addAction( new Action.Builder()
                     .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_navigation ) ).build() )
                     .setOnClickListener( this::startNavigation )
+                    .setTitle( mIcInfos[mIcInfoNo].name )
                     .build() );
             actionStripBuilder.addAction( new Action.Builder()
                     .setIcon( new CarIcon.Builder( IconCompat.createWithResource( mCarContext, R.drawable.ic_stop ) ).build() )
@@ -519,6 +532,10 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
             mHandler.post( mTripRunnable );
             mIsNavigating = true;
         }
+        else {
+            mIcInfoNo = ( mIcInfoNo + 1 ) % mIcInfos.length;
+            invalidate();
+        }
     }
 
     public void stopNavigation() {
@@ -532,24 +549,19 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
     public void updateTrip() {
         if ( !mIsNavigating ) return;
 
-        Maneuver maneuver = new Maneuver.Builder( Maneuver.TYPE_DEPART ).build();
+        IcInfo icInfo = mIcInfos[mIcInfoNo];
 
-        Step step = new Step.Builder( "GPS Speed" )
+        Maneuver maneuver = new Maneuver.Builder( icInfo.maneuverType ).build();
+
+        Step step = new Step.Builder( icInfo.name )
                 .setManeuver( maneuver )
                 .build();
 
         Destination destination = new Destination.Builder()
-                .setName( "GPS Speed" )
+                .setName( icInfo.name )
                 .build();
 
-        Distance dist;
-
-        if ( mLocation != null && mLocation.hasSpeed() ) {
-            dist = Distance.create( mLocation.getSpeed() * 3.6f, Distance.UNIT_KILOMETERS_P1 );
-        }
-        else {
-            dist = Distance.create( Math.abs( mSpeed ) * 3.6f, Distance.UNIT_KILOMETERS_P1 );
-        }
+        Distance dist = icInfo.getDistance();
 
         long currentTimeMillis = System.currentTimeMillis();
         DateTimeWithZone arrivalTime = DateTimeWithZone.create(
@@ -568,5 +580,57 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
                 .build();
 
         mNavigationManager.updateTrip( trip );
+    }
+
+    private enum IcType {
+        GPS_SPEED,
+        CAR_SPEED,
+        DATE_MONTH,
+        DATE_DAY,
+        TIME_HOUR,
+        TIME_MINUTE;
+    }
+
+    private class IcInfo {
+        final IcType type;
+        final String name;
+        final int maneuverType;
+        final int displayUnit;
+
+        IcInfo( IcType type, String name, int maneuverType, int displayUnit ) {
+            this.type = type;
+            this.name = name;
+            this.maneuverType = maneuverType;
+            this.displayUnit = displayUnit;
+        }
+
+        public Distance getDistance() {
+            double displayDistance = 0;
+
+            switch ( type ) {
+                case GPS_SPEED:
+                    if ( mLocation != null && mLocation.hasSpeed() ) {
+                        displayDistance = mLocation.getSpeed() * 3.6f;
+                    }
+                    break;
+                case CAR_SPEED:
+                    displayDistance = Math.abs( mSpeed ) * 3.6f;
+                    break;
+                case DATE_MONTH:
+                    displayDistance = Calendar.getInstance().get( Calendar.MONTH ) + 1;
+                    break;
+                case DATE_DAY:
+                    displayDistance = Calendar.getInstance().get( Calendar.DAY_OF_MONTH );
+                    break;
+                case TIME_HOUR:
+                    displayDistance = Calendar.getInstance().get( Calendar.HOUR_OF_DAY );
+                    break;
+                case TIME_MINUTE:
+                    displayDistance = Calendar.getInstance().get( Calendar.MINUTE );
+                    break;
+            }
+
+            return Distance.create( displayDistance, displayUnit );
+        }
     }
 }
