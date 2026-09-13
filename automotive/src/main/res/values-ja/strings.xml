@@ -23,10 +23,10 @@
     <string name="pref_font_scale_summary">ウィジェットフォントスケールを入力する</string>
     <string name="apply_settings">設定を適用</string>
     <string name="widget_search_hint">ウィジェットを検索</string>
-    <string name="ic_info_gps_speed">GPS速度</string>
-    <string name="ic_info_car_speed">車速</string>
-    <string name="ic_info_month">月</string>
-    <string name="ic_info_day">日</string>
-    <string name="ic_info_hour">時</string>
-    <string name="ic_info_minute">分</string>
+    <string name="ic_info_gps_speed">GPS速度 [km/h]</string>
+    <string name="ic_info_car_speed">車速 [km/h]</string>
+    <string name="ic_info_month">日付 [月]</string>
+    <string name="ic_info_day">日付 [日]</string>
+    <string name="ic_info_hour">時刻 [時]</string>
+    <string name="ic_info_minute">時刻 [分]</string>
 </resources>
