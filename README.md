@@ -1,7 +1,7 @@
 # AAWidget
 
 Android Autoヘッドユニットにウィジェットを表示します。
-下図はマツダコネクト(初代)で時計のウィジェットを表示しています。
+下図はマツダコネクト(二代目)で時計のウィジェットを表示しています。
 
 ![AAWidget Head Unit Preview](./image/aawidget-head-unit-preview.jpg)
 
