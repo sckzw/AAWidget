@@ -273,7 +273,7 @@ public class AAWidgetScreen extends Screen implements SurfaceCallback, DefaultLi
 
     @Override
     public void onVisibleAreaChanged( @NonNull Rect visibleArea ) {
-        if ( mAppWidgetView == null ) {
+        if ( mAppWidgetView == null || visibleArea.isEmpty() ) {
             return;
         }
 
